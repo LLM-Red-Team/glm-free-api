@@ -316,7 +316,6 @@ function messagesPrepare(messages: any[], refs: any[]) {
     const role = message.role.replace('user', '我').replace('assistant', '你') || '我';
     return content += `${role}:${message.content}\n你:`;
   }, '');
-  console.log(content)
   return [
     {
       role: 'user',
