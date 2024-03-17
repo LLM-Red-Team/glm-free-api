@@ -304,7 +304,7 @@ function extractRefFileUrls(messages: any[]) {
  * @param messages 参考gpt系列消息格式，多轮对话请完整提供上下文
  */
 function messagesPrepare(messages: any[], refs: any[]) {
-  const headPrompt = '设定：【重要】回答用户问题，禁止输出双方的名字\n';
+  const headPrompt = '使用”你“这个角色回复”我“这个角色，以第一人称对话\n';
   const content = messages.reduce((content, message) => {
     if (_.isArray(message.content)) {
       return message.content.reduce((_content, v) => {
@@ -313,9 +313,10 @@ function messagesPrepare(messages: any[], refs: any[]) {
         return _content + (v['text'] || '');
       }, content);
     }
-    const role = message.role.replace('user', '我').replace('assistant', 'ChatGLM') || '我';
-    return content += `${role}:${message.content}\n`;
+    const role = message.role.replace('user', '我').replace('assistant', '你') || '我';
+    return content += `${role}:${message.content}\n你:`;
   }, '');
+  console.log(content)
   return [
     {
       role: 'user',
