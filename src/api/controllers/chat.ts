@@ -13,8 +13,8 @@ import util from '@/lib/util.ts';
 
 // 模型名称
 const MODEL_NAME = 'glm';
-// 默认的智能体ID
-const DEFAULT_ASSISTANT_ID = '65c32fa2a766a337422a6006';
+// 默认的智能体ID，GLM4
+const DEFAULT_ASSISTANT_ID = '65940acff94777010aa6b796';
 // access_token有效期
 const ACCESS_TOKEN_EXPIRES = 3600;
 // 最大重试次数
@@ -157,17 +157,6 @@ async function createCompletion(messages: any[], refreshToken: string, assistant
 
     // 请求流
     const token = await acquireToken(refreshToken);
-    console.log({
-      assistant_id: assistantId,
-      conversation_id: '',
-      messages: messagesPrepare(messages, refs),
-      meta_data: {
-        channel: '',
-        draft_id: '',
-        input_question_type: 'xxxx',
-        is_test: false
-      }
-    });
     const result = await axios.post('https://chatglm.cn/chatglm/backend-api/assistant/stream', {
       assistant_id: assistantId,
       conversation_id: '',
@@ -315,7 +304,7 @@ function extractRefFileUrls(messages: any[]) {
  * @param messages 参考gpt系列消息格式，多轮对话请完整提供上下文
  */
 function messagesPrepare(messages: any[], refs: any[]) {
-  const headPrompt = '设定：【重要】回答用户问题，不要输出说话者\n';
+  const headPrompt = '设定：【重要】回答用户问题，禁止输出双方的名字\n';
   const content = messages.reduce((content, message) => {
     if (_.isArray(message.content)) {
       return message.content.reduce((_content, v) => {

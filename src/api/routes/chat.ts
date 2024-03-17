@@ -20,14 +20,15 @@ export default {
             // 随机挑选一个refresh_token
             const token = _.sample(tokens);
             const messages =  request.body.messages;
+            const assistantId = /^[a-z0-9]{24,}$/.test(request.body.model) ? request.body.model : undefined
             if (request.body.stream) {
-                const stream = await chat.createCompletionStream(request.body.messages, token, request.body.use_search);
+                const stream = await chat.createCompletionStream(request.body.messages, token, assistantId);
                 return new Response(stream, {
                     type: "text/event-stream"
                 });
             }
             else
-                return await chat.createCompletion(messages, token, request.body.use_search);
+                return await chat.createCompletion(messages, token, assistantId);
         }
 
     }
