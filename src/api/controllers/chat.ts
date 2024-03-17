@@ -316,14 +316,23 @@ function messagesPrepare(messages: any[], refs: any[]) {
     const role = message.role.replace('user', '我').replace('assistant', '你') || '我';
     return content += `${role}:${message.content}\n你:`;
   }, '');
+  const fileRefs = refs.filter(ref => !ref.width && !ref.height);
+  const imageRefs = refs.filter(ref => ref.width || ref.height).map(ref => {
+    ref.image_url = ref.file_url;
+    return ref;
+  });
   return [
     {
       role: 'user',
       content: [
         { type: 'text', text: headPrompt + content },
-        ...(refs.length == 0 ? [] : [{
+        ...(fileRefs.length == 0 ? [] : [{
           type: 'file',
-          file: refs
+          file: fileRefs
+        }]),
+        ...(imageRefs.length == 0 ? [] : [{
+          type: 'image',
+          image: imageRefs
         }])
       ]
     }
