@@ -304,7 +304,7 @@ function extractRefFileUrls(messages: any[]) {
  * @param messages 参考gpt系列消息格式，多轮对话请完整提供上下文
  */
 function messagesPrepare(messages: any[], refs: any[]) {
-  const headPrompt = '使用”你“这个角色回复”我“这个角色，以第一人称对话\n';
+  const headPrompt = '使用”你“这个角色回复”我“这个角色，以第一人称对话，不要携带”我:“以及"你:"\n';
   const content = messages.reduce((content, message) => {
     if (_.isArray(message.content)) {
       return message.content.reduce((_content, v) => {
