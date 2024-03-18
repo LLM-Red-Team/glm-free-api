@@ -181,6 +181,9 @@ async function createCompletion(messages: any[], refreshToken: string, assistant
       responseType: 'stream'
     });
 
+    if(result.headers['content-type'].indexOf('text/event-stream') == -1)
+      throw new APIException(EX.API_REQUEST_FAILED, `Stream response Content-Type invalid: ${result.headers['content-type']}`);
+
     const streamStartTime = util.timestamp();
     // 接收流为输出文本
     const answer = await receiveStream(result.data);
@@ -247,6 +250,24 @@ async function createCompletionStream(messages: any[], refreshToken: string, ass
       responseType: 'stream'
     });
 
+    if(result.headers['content-type'].indexOf('text/event-stream') == -1) {
+      logger.error(`Invalid response Content-Type:`, result.headers['content-type']);
+      const transStream = new PassThrough();
+      transStream.end(`data: ${JSON.stringify({
+        id: '',
+        model: MODEL_NAME,
+        object: 'chat.completion.chunk',
+        choices: [
+          {
+            index: 0, delta: { role: 'assistant', content: '服务暂时不可用，第三方响应错误' }, finish_reason: 'stop'
+          }
+        ],
+        usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
+        created: util.unixTimestamp()
+      })}\n\n`);
+      return transStream;
+    }
+
     const streamStartTime = util.timestamp();
     // 创建转换流将消息格式转换为gpt兼容格式
     return createTransStream(result.data, (convId: string) => {
@@ -304,18 +325,16 @@ function extractRefFileUrls(messages: any[]) {
  * @param messages 参考gpt系列消息格式，多轮对话请完整提供上下文
  */
 function messagesPrepare(messages: any[], refs: any[]) {
-  const headPrompt = '使用”你“这个角色回复”我“这个角色，以第一人称对话，不要携带”我:“以及"你:"\n';
   const content = messages.reduce((content, message) => {
     if (_.isArray(message.content)) {
       return message.content.reduce((_content, v) => {
         if (!_.isObject(v) || v['type'] != 'text')
           return _content;
         return _content + (v['text'] || '');
-      }, content);
+      }, content) + '\n';
     }
-    const role = message.role.replace('user', '我').replace('assistant', '你') || '我';
-    return content += `${role}:${message.content}\n你:`;
-  }, '');
+    return content += `${message.role.replace('sytstem', '<|sytstem|>').replace('assistant', '<|assistant|>').replace('user', '<|user|>')}\n${message.content}\n`;
+  }, '') + '<|assistant|>\n';
   const fileRefs = refs.filter(ref => !ref.width && !ref.height);
   const imageRefs = refs.filter(ref => ref.width || ref.height).map(ref => {
     ref.image_url = ref.file_url;
@@ -325,7 +344,7 @@ function messagesPrepare(messages: any[], refs: any[]) {
     {
       role: 'user',
       content: [
-        { type: 'text', text: headPrompt + content },
+        { type: 'text', text: content.replace(/\!\[.+\]\(.+\)/g, '') },
         ...(fileRefs.length == 0 ? [] : [{
           type: 'file',
           file: fileRefs
@@ -492,7 +511,7 @@ async function receiveStream(stream: any): Promise<any> {
                 return innerStr + searchText;
               }
               else if(type == 'image' && _.isArray(image) && status == 'finish') {
-                const imageText = image.reduce((imgs, v) => imgs + `![图像](${v.image_url || ''})`, '') + '\n';
+                const imageText = image.reduce((imgs, v) => imgs + (/^(http|https):\/\//.test(v.image_url) ? `![图像](${v.image_url || ''})` : ''), '') + '\n';
                 textOffset += imageText.length;
                 toolCall = true;
                 return innerStr + imageText;
@@ -537,8 +556,6 @@ function createTransStream(stream: any, endCallback?: Function) {
   let content = '';
   let toolCall = false;
   let textOffset = 0;
-  let sourceTagCheck = false;
-  let outputTemp = '';
   !transStream.closed && transStream.write(`data: ${JSON.stringify({
     id: '',
     model: MODEL_NAME,
@@ -555,7 +572,7 @@ function createTransStream(stream: any, endCallback?: Function) {
       const result = _.attempt(() => JSON.parse(event.data));
       if (_.isError(result))
         throw new Error(`Stream response invalid: ${event.data}`);
-      if(result.status != 'finish') {
+      if(result.status != 'finish' && result.status != 'intervene') {
         const text = result.parts.reduce((str, part) => {
           const { status, content, meta_data } = part;
           if(!_.isArray(content))
@@ -577,7 +594,7 @@ function createTransStream(stream: any, endCallback?: Function) {
               return innerStr + searchText;
             }
             else if(type == 'image' && _.isArray(image) && status == 'finish') {
-              const imageText = image.reduce((imgs, v) => imgs + `![图像](${v.image_url || ''})`, '') + '\n';
+              const imageText = image.reduce((imgs, v) => imgs + (/^(http|https):\/\//.test(v.image_url) ? `![图像](${v.image_url || ''})` : ''), '') + '\n';
               textOffset += imageText.length;
               toolCall = true;
               return innerStr + imageText;
@@ -608,7 +625,9 @@ function createTransStream(stream: any, endCallback?: Function) {
           object: 'chat.completion.chunk',
           choices: [
             {
-              index: 0, delta: {}, finish_reason: 'stop'
+              index: 0,
+              delta: result.status == 'intervene' && result.last_error && result.last_error.intervene_text ? { content: `\n\n${result.last_error.intervene_text}` } :  {},
+              finish_reason: 'stop'
             }
           ],
           usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
