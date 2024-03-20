@@ -479,6 +479,8 @@ async function receiveStream(stream: any): Promise<any> {
       created: util.unixTimestamp()
     };
     let toolCall = false;
+    // let codeGenerating = false;
+    let lastExecutionOutput = '';
     let textOffset = 0;
     const parser = createParser(event => {
       try {
@@ -495,7 +497,7 @@ async function receiveStream(stream: any): Promise<any> {
             if(!_.isArray(content))
               return str;
             const partText = content.reduce((innerStr, value) => {
-              const { type, text, image } = value;
+              const { status: partStatus, type, text, image, code, content } = value;
               if(type == 'text') {
                 if(toolCall) {
                   innerStr += '\n';
@@ -515,6 +517,24 @@ async function receiveStream(stream: any): Promise<any> {
                 textOffset += imageText.length;
                 toolCall = true;
                 return innerStr + imageText;
+              }
+              // else if(type == 'code' && partStatus == 'init' && !codeGenerating) {
+              //   codeGenerating = true;
+              //   const label = '代码生成中...\n';
+              //   textOffset += label.length;
+              //   return innerStr + label;
+              // }
+              // else if(type == 'code' && partStatus == 'finish' && codeGenerating) {
+              //   codeGenerating = false;
+              //   const label = '代码执行中...\n';
+              //   textOffset += label.length;
+              //   return innerStr + label;
+              // }
+              else if(type == 'execution_output' && _.isString(content) && partStatus == 'done' && lastExecutionOutput != content) {
+                lastExecutionOutput = content;
+                const _content = content.replace(/^\n/, '');
+                textOffset += _content.length + 1;
+                return innerStr + _content + '\n';
               }
               return innerStr;
             }, '');
@@ -555,6 +575,8 @@ function createTransStream(stream: any, endCallback?: Function) {
   const transStream = new PassThrough();
   let content = '';
   let toolCall = false;
+  let codeGenerating = false;
+  let lastExecutionOutput = '';
   let textOffset = 0;
   !transStream.closed && transStream.write(`data: ${JSON.stringify({
     id: '',
@@ -578,7 +600,7 @@ function createTransStream(stream: any, endCallback?: Function) {
           if(!_.isArray(content))
             return str;
           const partText = content.reduce((innerStr, value) => {
-            const { type, text, image } = value;
+            const { status: partStatus, type, text, image, code, content } = value;
             if(type == 'text') {
               if(toolCall) {
                 innerStr += '\n';
@@ -598,6 +620,23 @@ function createTransStream(stream: any, endCallback?: Function) {
               textOffset += imageText.length;
               toolCall = true;
               return innerStr + imageText;
+            }
+            else if(type == 'code' && partStatus == 'init' && !codeGenerating) {
+              codeGenerating = true;
+              const label = '代码生成中...\n';
+              textOffset += label.length;
+              return innerStr + label;
+            }
+            else if(type == 'code' && partStatus == 'finish' && codeGenerating) {
+              codeGenerating = false;
+              const label = '代码执行中...\n';
+              textOffset += label.length;
+              return innerStr + label;
+            }
+            else if(type == 'execution_output' && _.isString(content) && partStatus == 'done' && lastExecutionOutput != content) {
+              lastExecutionOutput = content;
+              textOffset += content.length + 1;
+              return innerStr + content + '\n';
             }
             return innerStr;
           }, '');
