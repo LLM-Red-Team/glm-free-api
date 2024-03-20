@@ -272,7 +272,7 @@ async function createCompletionStream(messages: any[], refreshToken: string, ass
     // 创建转换流将消息格式转换为gpt兼容格式
     return createTransStream(result.data, (convId: string) => {
       logger.success(`Stream has completed transfer ${util.timestamp() - streamStartTime}ms`);
-      // 流传输结束后异步移除会话，如果消息不合规，此操作可能会抛出数据库错误异常，请忽略
+      // 流传输结束后异步移除会话
       removeConversation(convId, refreshToken, assistantId)
         .catch(err => console.error(err));
     });
@@ -636,7 +636,7 @@ function createTransStream(stream: any, endCallback?: Function) {
         !transStream.closed && transStream.write(data);
         !transStream.closed && transStream.end('data: [DONE]\n\n');
         content = '';
-        endCallback && endCallback();
+        endCallback && endCallback(result.conversation_id);
       }
     }
     catch (err) {
