@@ -77,6 +77,10 @@ https://udify.app/chat/Pe89TtaX3rKXM8NS
 
 ![长文档解读](./doc/example-5.png)
 
+### 代码调用
+
+![代码调用](./doc/example-12.jpg)
+
 ### 图像解析
 
 ![图像解析](./doc/example-3.png)
