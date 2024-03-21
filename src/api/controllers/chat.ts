@@ -479,7 +479,8 @@ async function receiveStream(stream: any): Promise<any> {
       created: util.unixTimestamp()
     };
     let toolCall = false;
-    // let codeGenerating = false;
+    let codeGenerating = false;
+    let codeTemp = '';
     let lastExecutionOutput = '';
     let textOffset = 0;
     const parser = createParser(event => {
@@ -518,18 +519,24 @@ async function receiveStream(stream: any): Promise<any> {
                 toolCall = true;
                 return innerStr + imageText;
               }
-              // else if(type == 'code' && partStatus == 'init' && !codeGenerating) {
-              //   codeGenerating = true;
-              //   const label = '代码生成中...\n';
-              //   textOffset += label.length;
-              //   return innerStr + label;
-              // }
-              // else if(type == 'code' && partStatus == 'finish' && codeGenerating) {
-              //   codeGenerating = false;
-              //   const label = '代码执行中...\n';
-              //   textOffset += label.length;
-              //   return innerStr + label;
-              // }
+              else if(type == 'code' && partStatus == 'init') {
+                let codeHead = '';
+                if(!codeGenerating) {
+                  codeGenerating = true;
+                  codeHead = '```python\n';
+                }
+                const chunk = code.substring(codeTemp.length, code.length);
+                codeTemp += chunk;
+                textOffset += codeHead.length + chunk.length;
+                return innerStr + codeHead + chunk;
+              }
+              else if(type == 'code' && partStatus == 'finish' && codeGenerating) {
+                const codeFooter = '\n```';
+                codeGenerating = false;
+                codeTemp = '';
+                textOffset += codeFooter.length;
+                return innerStr + codeFooter;
+              }
               else if(type == 'execution_output' && _.isString(content) && partStatus == 'done' && lastExecutionOutput != content) {
                 lastExecutionOutput = content;
                 const _content = content.replace(/^\n/, '');
@@ -576,6 +583,7 @@ function createTransStream(stream: any, endCallback?: Function) {
   let content = '';
   let toolCall = false;
   let codeGenerating = false;
+  let codeTemp = '';
   let lastExecutionOutput = '';
   let textOffset = 0;
   !transStream.closed && transStream.write(`data: ${JSON.stringify({
@@ -621,17 +629,23 @@ function createTransStream(stream: any, endCallback?: Function) {
               toolCall = true;
               return innerStr + imageText;
             }
-            else if(type == 'code' && partStatus == 'init' && !codeGenerating) {
-              codeGenerating = true;
-              const label = '代码生成中...\n';
-              textOffset += label.length;
-              return innerStr + label;
+            else if(type == 'code' && partStatus == 'init') {
+              let codeHead = '';
+              if(!codeGenerating) {
+                codeGenerating = true;
+                codeHead = '```python\n';
+              }
+              const chunk = code.substring(codeTemp.length, code.length);
+              codeTemp += chunk;
+              textOffset += codeHead.length + chunk.length;
+              return innerStr + codeHead + chunk;
             }
             else if(type == 'code' && partStatus == 'finish' && codeGenerating) {
+              const codeFooter = '\n```';
               codeGenerating = false;
-              const label = '代码执行中...\n';
-              textOffset += label.length;
-              return innerStr + label;
+              codeTemp = '';
+              textOffset += codeFooter.length;
+              return innerStr + codeFooter;
             }
             else if(type == 'execution_output' && _.isString(content) && partStatus == 'done' && lastExecutionOutput != content) {
               lastExecutionOutput = content;
