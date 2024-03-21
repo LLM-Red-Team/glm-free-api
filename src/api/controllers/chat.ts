@@ -539,7 +539,7 @@ async function receiveStream(stream: any): Promise<any> {
                 return innerStr + codeHead + chunk;
               }
               else if(type == 'code' && partStatus == 'finish' && codeGenerating) {
-                const codeFooter = '```\n';
+                const codeFooter = '\n```\n';
                 codeGenerating = false;
                 codeTemp = '';
                 textOffset += codeFooter.length;
