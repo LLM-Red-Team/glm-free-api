@@ -79,7 +79,7 @@ https://udify.app/chat/Pe89TtaX3rKXM8NS
 
 ### 代码调用
 
-![代码调用](./doc/example-12.jpg)
+![代码调用](./doc/example-12.png)
 
 ### 图像解析
 
