@@ -480,6 +480,7 @@ async function receiveStream(stream: any): Promise<any> {
     };
     let toolCall = false;
     let codeGenerating = false;
+    let textChunkLength = 0;
     let codeTemp = '';
     let lastExecutionOutput = '';
     let textOffset = 0;
@@ -499,12 +500,19 @@ async function receiveStream(stream: any): Promise<any> {
               return str;
             const partText = content.reduce((innerStr, value) => {
               const { status: partStatus, type, text, image, code, content } = value;
+              if(partStatus == 'init' && textChunkLength > 0) {
+                textOffset += textChunkLength + 1;
+                textChunkLength = 0;
+                innerStr += '\n';
+              }
               if(type == 'text') {
                 if(toolCall) {
                   innerStr += '\n';
                   textOffset++;
                   toolCall = false;
                 }
+                if(partStatus == 'finish')
+                  textChunkLength = text.length;
                 return innerStr + text;
               }
               else if(type == 'quote_result' && status == 'finish' && meta_data && _.isArray(meta_data.metadata_list)) {
@@ -531,7 +539,7 @@ async function receiveStream(stream: any): Promise<any> {
                 return innerStr + codeHead + chunk;
               }
               else if(type == 'code' && partStatus == 'finish' && codeGenerating) {
-                const codeFooter = '\n```';
+                const codeFooter = '```\n';
                 codeGenerating = false;
                 codeTemp = '';
                 textOffset += codeFooter.length;
@@ -583,6 +591,7 @@ function createTransStream(stream: any, endCallback?: Function) {
   let content = '';
   let toolCall = false;
   let codeGenerating = false;
+  let textChunkLength = 0;
   let codeTemp = '';
   let lastExecutionOutput = '';
   let textOffset = 0;
@@ -609,13 +618,20 @@ function createTransStream(stream: any, endCallback?: Function) {
             return str;
           const partText = content.reduce((innerStr, value) => {
             const { status: partStatus, type, text, image, code, content } = value;
+            if(partStatus == 'init' && textChunkLength > 0) {
+              textOffset += textChunkLength + 1;
+              textChunkLength = 0;
+              innerStr += '\n';
+            }
             if(type == 'text') {
               if(toolCall) {
                 innerStr += '\n';
                 textOffset++;
                 toolCall = false;
               }
-              return innerStr + text.replace(/【\d+†source】/g, '');
+              if(partStatus == 'finish')
+                textChunkLength = text.length;
+              return innerStr + text;
             }
             else if(type == 'quote_result' && status == 'finish' && meta_data && _.isArray(meta_data.metadata_list)) {
               const searchText = meta_data.metadata_list.reduce((meta, v) => meta + `检索 ${v.title}(${v.url}) ...`, '') + '\n';
@@ -641,7 +657,7 @@ function createTransStream(stream: any, endCallback?: Function) {
               return innerStr + codeHead + chunk;
             }
             else if(type == 'code' && partStatus == 'finish' && codeGenerating) {
-              const codeFooter = '\n```';
+              const codeFooter = '```\n';
               codeGenerating = false;
               codeTemp = '';
               textOffset += codeFooter.length;
