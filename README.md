@@ -9,6 +9,14 @@
 
 与ChatGPT接口完全兼容。
 
+还有以下三个free-api欢迎关注：
+
+Moonshot AI（Kimi.ai）接口转API [kimi-free-api](https://github.com/LLM-Red-Team/kimi-free-api)
+
+阿里通义 (Qwen) 接口转API [qwen-free-api](https://github.com/LLM-Red-Team/qwen-free-api)
+
+聆心智能 (Emohaa) 接口转API [emohaa-free-api](https://github.com/LLM-Red-Team/emohaa-free-api)
+
 ## 声明
 
 仅限自用，禁止对外提供服务或商用，避免对官方造成服务压力，否则风险自担！
