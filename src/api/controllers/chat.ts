@@ -369,21 +369,19 @@ async function createCompletionStream(
 }
 
 async function generateImages(
-  model = MODEL_NAME,
+  model = '65a232c082ff90a2ad2f15e2',
   prompt: string,
   refreshToken: string,
   retryCount = 0
 ) {
   return (async () => {
     const messages = [{ role: "user", content: prompt }];
-    // 官方AI绘图的智能体ID
-    const assistantId = "65a232c082ff90a2ad2f15e2";
     // 请求流
     const token = await acquireToken(refreshToken);
     const result = await axios.post(
       "https://chatglm.cn/chatglm/backend-api/assistant/stream",
       {
-        assistant_id: assistantId,
+        assistant_id: model,
         conversation_id: "",
         messages: messagesPrepare(messages, []),
         meta_data: {
