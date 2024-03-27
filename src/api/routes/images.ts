@@ -18,8 +18,8 @@ export default {
       const token = _.sample(tokens);
       const prompt = request.body.prompt;
       const responseFormat = _.defaultTo(request.body.response_format, "url");
-      const model = request.body.model;
-      const imageUrls = await chat.generateImages(model, prompt, token);
+      const assistantId = /^[a-z0-9]{24,}$/.test(request.body.model) ? request.body.model : undefined
+      const imageUrls = await chat.generateImages(assistantId, prompt, token);
       let data = [];
       if (responseFormat == "b64_json") {
         data = (
