@@ -38,6 +38,7 @@ Moonshot AI（Kimi.ai）接口转API [kimi-free-api](https://github.com/LLM-Red-
 * [原生部署](#原生部署)
 * [接口列表](#接口列表)
   * [对话补全](#对话补全)
+  * [AI绘图](#AI绘图)
   * [文档解读](#文档解读)
   * [图像解析](#图像解析)
 * [注意事项](#注意事项)
@@ -261,6 +262,39 @@ Authorization: Bearer [refresh_token]
         "total_tokens": 2
     },
     "created": 1710152062
+}
+```
+
+### AI绘图
+
+对话补全接口，与openai的 [images-create-api](https://platform.openai.com/docs/api-reference/images/create) 兼容。
+
+**POST /v1/images/generations**
+
+header 需要设置 Authorization 头部：
+
+```
+Authorization: Bearer [refresh_token]
+```
+
+请求数据：
+```json
+{
+    // 如果使用智能体请填写智能体ID到此处，否则可以乱填
+    "model": "cogview-3",
+    "prompt": "一只可爱的猫"
+}
+```
+
+响应数据：
+```json
+{
+    "created": 1711507449,
+    "data": [
+        {
+            "url": "https://sfile.chatglm.cn/testpath/5e56234b-34ae-593c-ba4e-3f7ba77b5768_0.png"
+        }
+    ]
 }
 ```
 
