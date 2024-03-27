@@ -394,7 +394,7 @@ async function generateImages(
       {
         headers: {
           Authorization: `Bearer ${token}`,
-          Referer: `https://chatglm.cn/main/gdetail/${assistantId}`,
+          Referer: `https://chatglm.cn/main/gdetail/${model}`,
           "X-Device-Id": util.uuid(false),
           "X-Request-Id": util.uuid(false),
           ...FAKE_HEADERS,
@@ -420,7 +420,7 @@ async function generateImages(
     );
 
     // 异步移除会话，如果消息不合规，此操作可能会抛出数据库错误异常，请忽略
-    removeConversation(convId, refreshToken, assistantId).catch((err) =>
+    removeConversation(convId, refreshToken, model).catch((err) =>
       console.error(err)
     );
 
