@@ -495,6 +495,19 @@ function messagesPrepare(messages: any[], refs: any[]) {
     return !message.content.some(v => (typeof v === 'object' && ['file', 'image_url'].includes(v['type'])));
   });
 
+  // 检查最新消息是否含有"type": "image_url"或"type": "file",如果有则注入消息
+  let latestMessage = validMessages[validMessages.length - 1];
+  let hasFileOrImage = Array.isArray(latestMessage.content) 
+    && latestMessage.content.some(v => (typeof v === 'object' && ['file', 'image_url'].includes(v['type'])));
+  if (hasFileOrImage) {
+    // newMessage是一个用于指示文件的消息，是的模型能正常回答出相应的问题
+    let newMessage = {
+      "content": "持续关注用户最新发送的文件和消息的结尾",
+      "role": "system"
+    };
+    validMessages.splice(validMessages.length - 1, 0, newMessage);
+  }
+
   const content =
     validMessages.reduce((content, message) => {
       if (_.isArray(message.content)) {
