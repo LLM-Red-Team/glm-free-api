@@ -429,7 +429,7 @@ async function generateImages(
       console.error(err)
     );
 
-    if(imageUrls.length == 0)
+    if (imageUrls.length == 0)
       throw new APIException(EX.API_IMAGE_GENERATION_FAILED);
 
     return imageUrls;
@@ -452,29 +452,27 @@ async function generateImages(
  * @param messages 参考gpt系列消息格式，多轮对话请完整提供上下文
  */
 function extractRefFileUrls(messages: any[]) {
-  return messages.reduce((urls, message) => {
-    if (_.isArray(message.content)) {
-      message.content.forEach((v) => {
-        if (!_.isObject(v) || !["file", "image_url"].includes(v["type"]))
-          return;
-        // glm-free-api支持格式
-        if (
-          v["type"] == "file" &&
-          _.isObject(v["file_url"]) &&
-          _.isString(v["file_url"]["url"])
-        )
-          urls.push(v["file_url"]["url"]);
-        // 兼容gpt-4-vision-preview API格式
-        else if (
-          v["type"] == "image_url" &&
-          _.isObject(v["image_url"]) &&
-          _.isString(v["image_url"]["url"])
-        )
-          urls.push(v["image_url"]["url"]);
-      });
-    }
+  const urls = [];
+  // 如果没有消息，则返回[]
+  if (!messages.length) {
     return urls;
-  }, []);
+  }
+  // 只获取最新的消息
+  const lastMessage = messages[messages.length - 1];
+  if (_.isArray(lastMessage.content)) {
+    lastMessage.content.forEach(v => {
+      if (!_.isObject(v) || !['file', 'image_url'].includes(v['type']))
+        return;
+      // glm-free-api支持格式
+      if (v['type'] == 'file' && _.isObject(v['file_url']) && _.isString(v['file_url']['url']))
+        urls.push(v['file_url']['url']);
+      // 兼容gpt-4-vision-preview API格式
+      else if (v['type'] == 'image_url' && _.isObject(v['image_url']) && _.isString(v['image_url']['url']))
+        urls.push(v['image_url']['url']);
+    });
+  }
+  logger.info("本次请求上传：" + urls.length + "个文件");
+  return urls;
 }
 
 /**
@@ -489,8 +487,16 @@ function extractRefFileUrls(messages: any[]) {
  * @param messages 参考gpt系列消息格式，多轮对话请完整提供上下文
  */
 function messagesPrepare(messages: any[], refs: any[]) {
+  // 只保留最新消息以及不包含"type": "image_url"或"type": "file"的消息
+  let validMessages = messages.filter((message, index) => {
+    if (index === messages.length - 1) return true;
+    if (!Array.isArray(message.content)) return true;
+    // 不含"type": "image_url"或"type": "file"的消息保留
+    return !message.content.some(v => (typeof v === 'object' && ['file', 'image_url'].includes(v['type'])));
+  });
+
   const content =
-    messages.reduce((content, message) => {
+    validMessages.reduce((content, message) => {
       if (_.isArray(message.content)) {
         return (
           message.content.reduce((_content, v) => {
@@ -1002,8 +1008,8 @@ async function receiveImages(
           throw new Error(`Stream response invalid: ${event.data}`);
         if (!convId && result.conversation_id)
           convId = result.conversation_id;
-        if(result.status == "intervene")
-            throw new APIException(EX.API_CONTENT_FILTERED);
+        if (result.status == "intervene")
+          throw new APIException(EX.API_CONTENT_FILTERED);
         if (result.status != "finish") {
           result.parts.forEach(part => {
             const { content } = part;
