@@ -502,26 +502,8 @@ function extractRefFileUrls(messages: any[]) {
  * @param messages 参考gpt系列消息格式，多轮对话请完整提供上下文
  */
 function messagesPrepare(messages: any[], refs: any[]) {
-  // 先剔除所有的 base64 数据
-  let validMessages = messages.map((message) => {
-    if (Array.isArray(message.content)) {
-      message.content = message.content.filter((v) => {
-        if (
-          typeof v === "object" &&
-          ["file", "image_url"].includes(v["type"])
-        ) {
-          // 如果内容是 base64 数据，就剔除
-          return !util.isBASE64Data(v["url"]);
-        }
-        // 如果不是 base64 数据，就保留
-        return true;
-      });
-    }
-    return message;
-  });
-
   // 检查最新消息是否含有"type": "image_url"或"type": "file",如果有则注入消息
-  let latestMessage = validMessages[validMessages.length - 1];
+  let latestMessage = messages[messages.length - 1];
   let hasFileOrImage =
     Array.isArray(latestMessage.content) &&
     latestMessage.content.some(
@@ -532,7 +514,7 @@ function messagesPrepare(messages: any[], refs: any[]) {
       content: "关注用户最新发送文件和消息",
       role: "system",
     };
-    validMessages.splice(validMessages.length - 1, 0, newFileMessage);
+    messages.splice(messages.length - 1, 0, newFileMessage);
     logger.info("注入提升尾部文件注意力system prompt");
   } else {
     // 由于注入会导致设定污染，暂时注释
@@ -540,12 +522,12 @@ function messagesPrepare(messages: any[], refs: any[]) {
     //   content: "关注用户最新的消息",
     //   role: "system",
     // };
-    // validMessages.splice(validMessages.length - 1, 0, newTextMessage);
+    // messages.splice(messages.length - 1, 0, newTextMessage);
     // logger.info("注入提升尾部消息注意力system prompt");
   }
 
   const content = (
-    validMessages.reduce((content, message) => {
+    messages.reduce((content, message) => {
       if (_.isArray(message.content)) {
         return (
           message.content.reduce((_content, v) => {
