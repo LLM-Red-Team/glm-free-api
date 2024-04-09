@@ -215,12 +215,13 @@ async function createCompletion(
         responseType: "stream",
       }
     );
-
-    if (result.headers["content-type"].indexOf("text/event-stream") == -1)
+    if (result.headers["content-type"].indexOf("text/event-stream") == -1) {
+      result.data.on("data", buffer => logger.error(buffer.toString()));
       throw new APIException(
         EX.API_REQUEST_FAILED,
         `Stream response Content-Type invalid: ${result.headers["content-type"]}`
       );
+    }
 
     const streamStartTime = util.timestamp();
     // 接收流为输出文本
@@ -316,6 +317,7 @@ async function createCompletionStream(
         `Invalid response Content-Type:`,
         result.headers["content-type"]
       );
+      result.data.on("data", buffer => logger.error(buffer.toString()));
       const transStream = new PassThrough();
       transStream.end(
         `data: ${JSON.stringify({
