@@ -1118,9 +1118,39 @@ function generateCookie(refreshToken: string, token: string) {
   };
 }
 
+/**
+ * 获取Token存活状态
+ */
+async function getTokenLiveStatus(refreshToken: string) {
+  const result = await axios.post(
+    "https://chatglm.cn/chatglm/backend-api/v1/user/refresh",
+    {},
+    {
+      headers: {
+        Authorization: `Bearer ${refreshToken}`,
+        Referer: "https://chatglm.cn/main/alltoolsdetail",
+        "X-Device-Id": util.uuid(false),
+        "X-Request-Id": util.uuid(false),
+        ...FAKE_HEADERS,
+      },
+      timeout: 15000,
+      validateStatus: () => true,
+    }
+  );
+  try {
+    const { result: _result } = checkResult(result, refreshToken);
+    const { accessToken } = _result;
+    return !!accessToken;
+  }
+  catch(err) {
+    return false;
+  }
+}
+
 export default {
   createCompletion,
   createCompletionStream,
   generateImages,
+  getTokenLiveStatus,
   tokenSplit,
 };

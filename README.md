@@ -43,6 +43,7 @@ Moonshot AI（Kimi.ai）接口转API [kimi-free-api](https://github.com/LLM-Red-
   * [AI绘图](#AI绘图)
   * [文档解读](#文档解读)
   * [图像解析](#图像解析)
+  * [refresh_token存活检测](#refresh_token存活检测)
 * [注意事项](#注意事项)
   * [Nginx反代优化](#Nginx反代优化)
 
@@ -62,37 +63,37 @@ https://udify.app/chat/Pe89TtaX3rKXM8NS
 
 ## 效果示例
 
-### 验明正身
+### 验明正身Demo
 
 ![验明正身](./doc/example-1.png)
 
-### 智能体对话
+### 智能体对话Demo
 
 对应智能体链接：[网抑云评论生成器](https://chatglm.cn/main/gdetail/65c046a531d3fcb034918abe)
 
 ![智能体对话](./doc/example-9.png)
 
-### 多轮对话
+### 多轮对话Demo
 
 ![多轮对话](./doc/example-6.png)
 
-### AI绘图
+### AI绘图Demo
 
 ![AI绘图](./doc/example-10.png)
 
-### 联网搜索
+### 联网搜索Demo
 
 ![联网搜索](./doc/example-2.png)
 
-### 长文档解读
+### 长文档解读Demo
 
 ![长文档解读](./doc/example-5.png)
 
-### 代码调用
+### 代码调用Demo
 
 ![代码调用](./doc/example-12.png)
 
-### 图像解析
+### 图像解析Demo
 
 ![图像解析](./doc/example-3.png)
 
@@ -425,6 +426,26 @@ Authorization: Bearer [refresh_token]
         "total_tokens": 2
     },
     "created": 1710670469
+}
+```
+
+### refresh_token存活检测
+
+检测refresh_token是否存活，如果存活live未true，否则为false，请不要频繁（小于10分钟）调用此接口。
+
+**POST /token/check**
+
+请求数据：
+```json
+{
+    "token": "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9..."
+}
+```
+
+响应数据：
+```json
+{
+    "live": true
 }
 ```
 
