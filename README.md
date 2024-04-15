@@ -83,6 +83,12 @@ https://glm-free-api-ij4o.onrender.com
 
 ![智能体对话](./doc/example-9.png)
 
+### 结合Dify工作流Demo
+
+体验地址：https://udify.app/chat/m46YgeVLNzFh4zRs
+
+<img width="390" alt="image" src="https://github.com/LLM-Red-Team/glm-free-api/assets/20235341/4773b9f6-b1ca-460c-b3a7-c56bdb1f0659">
+
 ### 多轮对话Demo
 
 ![多轮对话](./doc/example-6.png)
