@@ -65,12 +65,6 @@ Moonshot AI（Kimi.ai）接口转API [kimi-free-api](https://github.com/LLM-Red-
 
 https://udify.app/chat/Pe89TtaX3rKXM8NS
 
-## 测试接口
-
-此接口实例部署在[Render](#Render部署)上面，遇到容器回收可能导致响应速度较慢，仅供测试，建议自行部署。
-
-https://glm-free-api-ij4o.onrender.com
-
 ## 效果示例
 
 ### 验明正身Demo
