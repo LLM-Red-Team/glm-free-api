@@ -1,6 +1,6 @@
 # GLM AI Free 服务
 
-![](https://img.shields.io/github/license/llm-red-team/glm-free-api.svg)
+[![](https://img.shields.io/github/license/llm-red-team/kimi-free-api.svg)](LICENSE)
 ![](https://img.shields.io/github/stars/llm-red-team/glm-free-api.svg)
 ![](https://img.shields.io/github/forks/llm-red-team/glm-free-api.svg)
 ![](https://img.shields.io/docker/pulls/vinlic/glm-free-api.svg)
@@ -23,21 +23,9 @@ Moonshot AI（Kimi.ai）接口转API [kimi-free-api](https://github.com/LLM-Red-
 
 聆心智能 (Emohaa) 接口转API [emohaa-free-api](https://github.com/LLM-Red-Team/emohaa-free-api)
 
-## 免责声明
-
-**逆向API是不稳定的，建议前往智谱AI官方 https://open.bigmodel.cn/ 付费使用API，避免封禁的风险。**
-
-**本组织和个人不接受任何资金捐助和交易，此项目是纯粹研究交流学习性质！**
-
-**仅限自用，禁止对外提供服务或商用，避免对官方造成服务压力，否则风险自担！**
-
-**仅限自用，禁止对外提供服务或商用，避免对官方造成服务压力，否则风险自担！**
-
-**仅限自用，禁止对外提供服务或商用，避免对官方造成服务压力，否则风险自担！**
-
 ## 目录
 
-* [声明](#声明)
+* [免责声明](#免责声明)
 * [在线体验](#在线体验)
 * [效果示例](#效果示例)
 * [接入准备](#接入准备)
@@ -56,14 +44,20 @@ Moonshot AI（Kimi.ai）接口转API [kimi-free-api](https://github.com/LLM-Red-
   * [refresh_token存活检测](#refresh_token存活检测)
 * [注意事项](#注意事项)
   * [Nginx反代优化](#Nginx反代优化)
+  * [Token统计](#Token统计)
+* [Star History](#star-history)
+  
+## 免责声明
 
-## 声明
+**逆向API是不稳定的，建议前往智谱AI官方 https://open.bigmodel.cn/ 付费使用API，避免封禁的风险。**
 
-仅限自用，禁止对外提供服务或商用，避免对官方造成服务压力，否则风险自担！
+**本组织和个人不接受任何资金捐助和交易，此项目是纯粹研究交流学习性质！**
 
-仅限自用，禁止对外提供服务或商用，避免对官方造成服务压力，否则风险自担！
+**仅限自用，禁止对外提供服务或商用，避免对官方造成服务压力，否则风险自担！**
 
-仅限自用，禁止对外提供服务或商用，避免对官方造成服务压力，否则风险自担！
+**仅限自用，禁止对外提供服务或商用，避免对官方造成服务压力，否则风险自担！**
+
+**仅限自用，禁止对外提供服务或商用，避免对官方造成服务压力，否则风险自担！**
 
 ## 在线体验
 
