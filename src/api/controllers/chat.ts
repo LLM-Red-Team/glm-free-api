@@ -379,8 +379,7 @@ async function generateImages(
   return (async () => {
     logger.info(prompt);
     const messages = [
-
-      { role: "user", content: prompt },
+      { role: "user", content: prompt.indexOf('画') == -1 ? `请画：${prompt}` : prompt },
     ];
     // 请求流
     const token = await acquireToken(refreshToken);
