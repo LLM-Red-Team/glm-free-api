@@ -486,10 +486,6 @@ function extractRefFileUrls(messages: any[]) {
  * 消息预处理
  *
  * 由于接口只取第一条消息，此处会将多条消息合并为一条，实现多轮对话效果
- * 使用”你“这个角色回复”我“这个角色，以第一人称对话\n
- * 我:旧消息1
- * 你:旧消息2
- * 我:新消息
  *
  * @param messages 参考gpt系列消息格式，多轮对话请完整提供上下文
  */
@@ -520,20 +516,25 @@ function messagesPrepare(messages: any[], refs: any[]) {
 
   const content = (
     messages.reduce((content, message) => {
+      const role = message.role
+        .replace("system", "<|sytstem|>")
+        .replace("assistant", "<|assistant|>")
+        .replace("user", "<|user|>");
       if (_.isArray(message.content)) {
         return (
           message.content.reduce((_content, v) => {
             if (!_.isObject(v) || v["type"] != "text") return _content;
-            return _content + ("<|user|>\n" + v["text"] || "") + "\n";
+            return _content + (`${role}\n` + v["text"] || "") + "\n";
           }, content)
         );
       }
-      return (content += `${message.role
-        .replace("system", "<|sytstem|>")
-        .replace("assistant", "<|assistant|>")
-        .replace("user", "<|user|>")}\n${message.content}\n`);
+      return (content += `${role}\n${message.content}\n`);
     }, "") + "<|assistant|>\n"
-  ).replace(/\!\[.+\]\(.+\)/g, "");
+  )
+    // 移除MD图像URL避免幻觉
+    .replace(/\!\[.+\]\(.+\)/g, "")
+    // 移除临时路径避免在新会话引发幻觉
+    .replace(/\/mnt\/data\/.+/g, "");
   const fileRefs = refs.filter((ref) => !ref.width && !ref.height);
   const imageRefs = refs
     .filter((ref) => ref.width || ref.height)
@@ -541,6 +542,7 @@ function messagesPrepare(messages: any[], refs: any[]) {
       ref.image_url = ref.file_url;
       return ref;
     });
+  content
   logger.info("\n对话合并：\n" + content);
   return [
     {
@@ -1062,7 +1064,7 @@ async function receiveImages(
                 let match;
                 while ((match = urlPattern.exec(text)) !== null) {
                   const url = match[1];
-                  if(imageUrls.indexOf(url) == -1)
+                  if (imageUrls.indexOf(url) == -1)
                     imageUrls.push(url);
                 }
               }
@@ -1141,7 +1143,7 @@ async function getTokenLiveStatus(refreshToken: string) {
     const { accessToken } = _result;
     return !!accessToken;
   }
-  catch(err) {
+  catch (err) {
     return false;
   }
 }
