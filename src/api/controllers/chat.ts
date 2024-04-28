@@ -185,7 +185,6 @@ async function createCompletion(
       : [];
 
     // 请求流
-    console.log(refConvId)
     const token = await acquireToken(refreshToken);
     const result = await axios.post(
       "https://chatglm.cn/chatglm/backend-api/assistant/stream",
