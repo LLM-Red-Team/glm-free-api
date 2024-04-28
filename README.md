@@ -295,7 +295,7 @@ Authorization: Bearer [refresh_token]
 响应数据：
 ```json
 {
-    // conversation_id，你可以传入到下一轮对话来接续上下文
+    // 如果想获得原生多轮对话体验，此id，你可以传入到下一轮对话的conversation_id来接续上下文
     "id": "65f6c28546bae1f0fbb532de",
     "model": "glm4",
     "object": "chat.completion",
