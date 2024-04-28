@@ -278,6 +278,9 @@ Authorization: Bearer [refresh_token]
 {
     // 如果使用智能体请填写智能体ID到此处，否则可以乱填
     "model": "glm4",
+    // 目前多轮对话基于消息合并实现，某些场景可能导致能力下降且token最高为4096
+    // 如果您想获得原生的多轮对话体验，可以传入首轮消息获得的id，来接续上下文
+    // "conversation_id": "65f6c28546bae1f0fbb532de",
     "messages": [
         {
             "role": "user",
@@ -292,6 +295,7 @@ Authorization: Bearer [refresh_token]
 响应数据：
 ```json
 {
+    // conversation_id，你可以传入到下一轮对话来接续上下文
     "id": "65f6c28546bae1f0fbb532de",
     "model": "glm4",
     "object": "chat.completion",

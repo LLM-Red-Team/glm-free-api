@@ -170,6 +170,7 @@ async function createCompletion(
   messages: any[],
   refreshToken: string,
   assistantId = DEFAULT_ASSISTANT_ID,
+  refConvId = '',
   retryCount = 0
 ) {
   return (async () => {
@@ -184,13 +185,14 @@ async function createCompletion(
       : [];
 
     // 请求流
+    console.log(refConvId)
     const token = await acquireToken(refreshToken);
     const result = await axios.post(
       "https://chatglm.cn/chatglm/backend-api/assistant/stream",
       {
         assistant_id: assistantId,
-        conversation_id: "",
-        messages: messagesPrepare(messages, refs),
+        conversation_id: refConvId,
+        messages: messagesPrepare(messages, refs, !!refConvId),
         meta_data: {
           channel: "",
           draft_id: "",
@@ -232,7 +234,7 @@ async function createCompletion(
 
     // 异步移除会话
     removeConversation(answer.id, refreshToken, assistantId).catch((err) =>
-      console.error(err)
+      !refConvId && console.error(err)
     );
 
     return answer;
@@ -246,6 +248,7 @@ async function createCompletion(
           messages,
           refreshToken,
           assistantId,
+          refConvId,
           retryCount + 1
         );
       })();
@@ -266,6 +269,7 @@ async function createCompletionStream(
   messages: any[],
   refreshToken: string,
   assistantId = DEFAULT_ASSISTANT_ID,
+  refConvId = '',
   retryCount = 0
 ) {
   return (async () => {
@@ -285,8 +289,8 @@ async function createCompletionStream(
       `https://chatglm.cn/chatglm/backend-api/assistant/stream`,
       {
         assistant_id: assistantId,
-        conversation_id: "",
-        messages: messagesPrepare(messages, refs),
+        conversation_id: refConvId,
+        messages: messagesPrepare(messages, refs, !!refConvId),
         meta_data: {
           channel: "",
           draft_id: "",
@@ -349,7 +353,7 @@ async function createCompletionStream(
       );
       // 流传输结束后异步移除会话
       removeConversation(convId, refreshToken, assistantId).catch((err) =>
-        console.error(err)
+        !refConvId && console.error(err)
       );
     });
   })().catch((err) => {
@@ -362,6 +366,7 @@ async function createCompletionStream(
           messages,
           refreshToken,
           assistantId,
+          refConvId,
           retryCount + 1
         );
       })();
@@ -488,8 +493,10 @@ function extractRefFileUrls(messages: any[]) {
  * 由于接口只取第一条消息，此处会将多条消息合并为一条，实现多轮对话效果
  *
  * @param messages 参考gpt系列消息格式，多轮对话请完整提供上下文
+ * @param refs 参考文件列表
+ * @param isRefConv 是否为引用会话
  */
-function messagesPrepare(messages: any[], refs: any[]) {
+function messagesPrepare(messages: any[], refs: any[], isRefConv = false) {
   // 检查最新消息是否含有"type": "image_url"或"type": "file",如果有则注入消息
   let latestMessage = messages[messages.length - 1];
   let hasFileOrImage =
@@ -514,27 +521,46 @@ function messagesPrepare(messages: any[], refs: any[]) {
     // logger.info("注入提升尾部消息注意力system prompt");
   }
 
-  const content = (
-    messages.reduce((content, message) => {
-      const role = message.role
-        .replace("system", "<|sytstem|>")
-        .replace("assistant", "<|assistant|>")
-        .replace("user", "<|user|>");
+  let content;
+  if(isRefConv || messages.length < 2) {
+    content = messages.reduce((content, message) => {
       if (_.isArray(message.content)) {
         return (
           message.content.reduce((_content, v) => {
             if (!_.isObject(v) || v["type"] != "text") return _content;
-            return _content + (`${role}\n` + v["text"] || "") + "\n";
+            return _content + (v["text"] || "") + "\n";
           }, content)
         );
       }
-      return (content += `${role}\n${message.content}\n`);
-    }, "") + "<|assistant|>\n"
-  )
-    // 移除MD图像URL避免幻觉
-    .replace(/\!\[.+\]\(.+\)/g, "")
-    // 移除临时路径避免在新会话引发幻觉
-    .replace(/\/mnt\/data\/.+/g, "");
+      return content + `${message.content}\n`;
+    }, "");
+    logger.info("\n透传内容：\n" + content);
+  }
+  else {
+    content = (
+      messages.reduce((content, message) => {
+        const role = message.role
+          .replace("system", "<|sytstem|>")
+          .replace("assistant", "<|assistant|>")
+          .replace("user", "<|user|>");
+        if (_.isArray(message.content)) {
+          return (
+            message.content.reduce((_content, v) => {
+              if (!_.isObject(v) || v["type"] != "text") return _content;
+              return _content + (`${role}\n` + v["text"] || "") + "\n";
+            }, content)
+          );
+        }
+        return (content += `${role}\n${message.content}\n`);
+      }, "") + "<|assistant|>\n"
+    )
+      // 移除MD图像URL避免幻觉
+      .replace(/\!\[.+\]\(.+\)/g, "")
+      // 移除临时路径避免在新会话引发幻觉
+      .replace(/\/mnt\/data\/.+/g, "");
+    logger.info("\n对话合并：\n" + content);
+  }
+
   const fileRefs = refs.filter((ref) => !ref.width && !ref.height);
   const imageRefs = refs
     .filter((ref) => ref.width || ref.height)
@@ -542,8 +568,6 @@ function messagesPrepare(messages: any[], refs: any[]) {
       ref.image_url = ref.file_url;
       return ref;
     });
-  content
-  logger.info("\n对话合并：\n" + content);
   return [
     {
       role: "user",
