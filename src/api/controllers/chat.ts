@@ -496,32 +496,8 @@ function extractRefFileUrls(messages: any[]) {
  * @param isRefConv 是否为引用会话
  */
 function messagesPrepare(messages: any[], refs: any[], isRefConv = false) {
-  // 检查最新消息是否含有"type": "image_url"或"type": "file",如果有则注入消息
-  let latestMessage = messages[messages.length - 1];
-  let hasFileOrImage =
-    Array.isArray(latestMessage.content) &&
-    latestMessage.content.some(
-      (v) => typeof v === "object" && ["file", "image_url"].includes(v["type"])
-    );
-  if (hasFileOrImage) {
-    let newFileMessage = {
-      content: "关注用户最新发送文件和消息",
-      role: "system",
-    };
-    messages.splice(messages.length - 1, 0, newFileMessage);
-    logger.info("注入提升尾部文件注意力system prompt");
-  } else {
-    // 由于注入会导致设定污染，暂时注释
-    // let newTextMessage = {
-    //   content: "关注用户最新的消息",
-    //   role: "system",
-    // };
-    // messages.splice(messages.length - 1, 0, newTextMessage);
-    // logger.info("注入提升尾部消息注意力system prompt");
-  }
-
   let content;
-  if(isRefConv || messages.length < 2) {
+  if (isRefConv || messages.length < 2) {
     content = messages.reduce((content, message) => {
       if (_.isArray(message.content)) {
         return (
@@ -536,6 +512,29 @@ function messagesPrepare(messages: any[], refs: any[], isRefConv = false) {
     logger.info("\n透传内容：\n" + content);
   }
   else {
+    // 检查最新消息是否含有"type": "image_url"或"type": "file",如果有则注入消息
+    let latestMessage = messages[messages.length - 1];
+    let hasFileOrImage =
+      Array.isArray(latestMessage.content) &&
+      latestMessage.content.some(
+        (v) => typeof v === "object" && ["file", "image_url"].includes(v["type"])
+      );
+    if (hasFileOrImage) {
+      let newFileMessage = {
+        content: "关注用户最新发送文件和消息",
+        role: "system",
+      };
+      messages.splice(messages.length - 1, 0, newFileMessage);
+      logger.info("注入提升尾部文件注意力system prompt");
+    } else {
+      // 由于注入会导致设定污染，暂时注释
+      // let newTextMessage = {
+      //   content: "关注用户最新的消息",
+      //   role: "system",
+      // };
+      // messages.splice(messages.length - 1, 0, newTextMessage);
+      // logger.info("注入提升尾部消息注意力system prompt");
+    }
     content = (
       messages.reduce((content, message) => {
         const role = message.role
