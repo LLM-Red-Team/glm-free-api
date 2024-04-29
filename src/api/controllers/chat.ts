@@ -184,6 +184,10 @@ async function createCompletion(
       )
       : [];
 
+    // 如果引用对话ID不正确则重置引用
+    if (!/[0-9a-zA-Z]{24}/.test(refConvId))
+      refConvId = '';
+
     // 请求流
     const token = await acquireToken(refreshToken);
     const result = await axios.post(
@@ -281,6 +285,10 @@ async function createCompletionStream(
         refFileUrls.map((fileUrl) => uploadFile(fileUrl, refreshToken))
       )
       : [];
+
+    // 如果引用对话ID不正确则重置引用
+    if (!/[0-9a-zA-Z]{24}/.test(refConvId))
+      refConvId = '';
 
     // 请求流
     const token = await acquireToken(refreshToken);
