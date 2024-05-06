@@ -839,7 +839,7 @@ async function receiveStream(stream: any): Promise<any> {
           data.choices[0].message.content += chunk;
         } else {
           data.choices[0].message.content =
-            data.choices[0].message.content.replace(/【\d+†source】/g, "");
+            data.choices[0].message.content.replace(/【\d+†来源】/g, "");
           resolve(data);
         }
       } catch (err) {
