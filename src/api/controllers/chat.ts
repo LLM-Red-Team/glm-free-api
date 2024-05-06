@@ -731,6 +731,7 @@ async function receiveStream(stream: any): Promise<any> {
     let codeTemp = "";
     let lastExecutionOutput = "";
     let textOffset = 0;
+    let refContent = '';
     const parser = createParser((event) => {
       try {
         if (event.type !== "event") return;
@@ -772,14 +773,9 @@ async function receiveStream(stream: any): Promise<any> {
                 meta_data &&
                 _.isArray(meta_data.metadata_list)
               ) {
-                const searchText =
-                  meta_data.metadata_list.reduce(
-                    (meta, v) => meta + `检索 ${v.title}(${v.url}) ...`,
-                    ""
-                  ) + "\n";
-                textOffset += searchText.length;
-                toolCall = true;
-                return innerStr + searchText;
+                refContent = meta_data.metadata_list.reduce((meta, v) => {
+                  return meta + `${v.title} - ${v.url}\n`;
+                }, refContent);
               } else if (
                 type == "image" &&
                 _.isArray(image) &&
@@ -839,7 +835,7 @@ async function receiveStream(stream: any): Promise<any> {
           data.choices[0].message.content += chunk;
         } else {
           data.choices[0].message.content =
-            data.choices[0].message.content.replace(/【\d+†来源】/g, "");
+            data.choices[0].message.content.replace(/【\d+†(来源|source)】/g, "") + (refContent ? `\n\n搜索结果来自：\n${refContent.replace(/\n$/, '')}` : '');
           resolve(data);
         }
       } catch (err) {
