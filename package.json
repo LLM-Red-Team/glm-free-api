@@ -1,6 +1,6 @@
 {
   "name": "glm-free-api",
-  "version": "0.0.28",
+  "version": "0.0.29",
   "description": "GLM Free API Server",
   "type": "module",
   "main": "dist/index.js",
