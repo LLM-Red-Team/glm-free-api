@@ -23,6 +23,8 @@ Moonshot AI（Kimi.ai）接口转API [kimi-free-api](https://github.com/LLM-Red-
 
 MiniMax（海螺AI）接口转API [hailuo-free-api](https://github.com/LLM-Red-Team/hailuo-free-api)
 
+深度求索（DeepSeek）接口转API [deepseek-free-api](https://github.com/LLM-Red-Team/deepseek-free-api)
+
 聆心智能 (Emohaa) 接口转API [emohaa-free-api](https://github.com/LLM-Red-Team/emohaa-free-api)
 
 ## 目录
@@ -280,7 +282,7 @@ Authorization: Bearer [refresh_token]
 {
     // 如果使用智能体请填写智能体ID到此处，否则可以乱填
     "model": "glm4",
-    // 目前多轮对话基于消息合并实现，某些场景可能导致能力下降且token最高为4096
+    // 目前多轮对话基于消息合并实现，某些场景可能导致能力下降且受单轮最大token数限制
     // 如果您想获得原生的多轮对话体验，可以传入首轮消息获得的id，来接续上下文
     // "conversation_id": "65f6c28546bae1f0fbb532de",
     "messages": [
