@@ -1064,10 +1064,10 @@ async function receiveImages(
           throw new APIException(EX.API_CONTENT_FILTERED);
         if (result.status != "finish") {
           result.parts.forEach((part) => {
-            const { content } = part;
+            const { status: partStatus, content } = part;
             if (!_.isArray(content)) return;
             content.forEach((value) => {
-              const { status: partStatus, type, image, text } = value;
+              const { type, image, text } = value;
               if (
                 type == "image" &&
                 _.isArray(image) &&
