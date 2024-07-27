@@ -5,7 +5,7 @@
 ![](https://img.shields.io/github/forks/llm-red-team/glm-free-api.svg)
 ![](https://img.shields.io/docker/pulls/vinlic/glm-free-api.svg)
 
-支持高速流式输出、支持多轮对话、支持智能体对话、支持AI绘图、支持联网搜索、支持长文档解读、支持图像解析，零配置部署，多路token支持，自动清理会话痕迹。
+支持高速流式输出、支持多轮对话、支持智能体对话、支持视频生成、支持AI绘图、支持联网搜索、支持长文档解读、支持图像解析，零配置部署，多路token支持，自动清理会话痕迹。
 
 与ChatGPT接口完全兼容。
 
@@ -43,6 +43,7 @@ MiniMax（海螺AI）接口转API [hailuo-free-api](https://github.com/LLM-Red-T
 * [推荐使用客户端](#推荐使用客户端)
 * [接口列表](#接口列表)
   * [对话补全](#对话补全)
+  * [视频生成](#视频生成)
   * [AI绘图](#AI绘图)
   * [文档解读](#文档解读)
   * [图像解析](#图像解析)
@@ -91,6 +92,10 @@ https://udify.app/chat/Pe89TtaX3rKXM8NS
 ### 多轮对话Demo
 
 ![多轮对话](./doc/example-6.png)
+
+### 视频生成Demo
+
+[点击预览](https://sfile.chatglm.cn/testpath/video/c1f59468-32fa-58c3-bd9d-ab4230cfe3ca_0.mp4)
 
 ### AI绘图Demo
 
@@ -322,9 +327,64 @@ Authorization: Bearer [refresh_token]
 }
 ```
 
+### 视频生成
+
+视频生成接口
+
+**如果您的账号未开通VIP，可能会因排队导致生成耗时较久**
+
+**POST /v1/videos/generations**
+
+header 需要设置 Authorization 头部：
+
+```
+Authorization: Bearer [refresh_token]
+```
+
+请求数据：
+```json
+{
+    // 模型名称
+    // cogvideox：默认官方视频模型
+    // cogvideox-pro：先生成图像再作为参考图像生成视频，作为视频首帧引导视频效果，但耗时更长
+    "model": "cogvideox",
+    // 视频生成提示词
+    "prompt": "一只可爱的猫走在花丛中",
+    // 支持使用图像URL或者BASE64_URL作为视频首帧参考图像（如果使用cogvideox-pro则会忽略此参数）
+    // "image_url": "https://sfile.chatglm.cn/testpath/b5341945-3839-522c-b4ab-a6268cb131d5_0.png",
+    // 支持设置视频风格：卡通3D/黑白老照片/油画/电影感
+    // "video_style": "油画",
+    // 支持设置情感氛围：温馨和谐/生动活泼/紧张刺激/凄凉寂寞
+    // "emotional_atmosphere": "生动活泼",
+    // 支持设置运镜方式：水平/垂直/推近/拉远
+    // "mirror_mode": "水平"
+}
+```
+
+响应数据：
+```json
+{
+    "created": 1722103836,
+    "data": [
+        {
+            // 对话ID，目前没啥用
+            "conversation_id": "66a537ec0603e53bccb8900a",
+            // 封面URL
+            "cover_url": "https://sfile.chatglm.cn/testpath/video_cover/c1f59468-32fa-58c3-bd9d-ab4230cfe3ca_cover_0.png",
+            // 视频URL
+            "video_url": "https://sfile.chatglm.cn/testpath/video/c1f59468-32fa-58c3-bd9d-ab4230cfe3ca_0.mp4",
+            // 视频时长
+            "video_duration": "6s",
+            // 视频分辨率
+            "resolution": "1440 × 960"
+        }
+    ]
+}
+```
+
 ### AI绘图
 
-对话补全接口，与openai的 [images-create-api](https://platform.openai.com/docs/api-reference/images/create) 兼容。
+图像生成接口，与openai的 [images-create-api](https://platform.openai.com/docs/api-reference/images/create) 兼容。
 
 **POST /v1/images/generations**
 

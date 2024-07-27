@@ -52,7 +52,7 @@ export default class Request {
         this.time = Number(_.defaultTo(time, util.timestamp()));
     }
 
-    validate(key: string, fn?: Function) {
+    validate(key: string, fn?: Function, message?: string) {
         try {
             const value = _.get(this, key);
             if (fn) {
@@ -64,7 +64,7 @@ export default class Request {
         }
         catch (err) {
             logger.warn(`Params ${key} invalid:`, err);
-            throw new APIException(EX.API_REQUEST_PARAMS_INVALID, `Params ${key} invalid`);
+            throw new APIException(EX.API_REQUEST_PARAMS_INVALID, message || `Params ${key} invalid`);
         }
         return this;
     }

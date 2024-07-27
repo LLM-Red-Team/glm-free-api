@@ -2,6 +2,8 @@ import { PassThrough } from "stream";
 import path from "path";
 import _ from "lodash";
 import mime from "mime";
+import sharp from "sharp";
+import fs from "fs-extra";
 import FormData from "form-data";
 import axios, { AxiosResponse } from "axios";
 
@@ -170,7 +172,7 @@ async function createCompletion(
   messages: any[],
   refreshToken: string,
   assistantId = DEFAULT_ASSISTANT_ID,
-  refConvId = '',
+  refConvId = "",
   retryCount = 0
 ) {
   return (async () => {
@@ -180,13 +182,12 @@ async function createCompletion(
     const refFileUrls = extractRefFileUrls(messages);
     const refs = refFileUrls.length
       ? await Promise.all(
-        refFileUrls.map((fileUrl) => uploadFile(fileUrl, refreshToken))
-      )
+          refFileUrls.map((fileUrl) => uploadFile(fileUrl, refreshToken))
+        )
       : [];
 
     // 如果引用对话ID不正确则重置引用
-    if (!/[0-9a-zA-Z]{24}/.test(refConvId))
-      refConvId = '';
+    if (!/[0-9a-zA-Z]{24}/.test(refConvId)) refConvId = "";
 
     // 请求流
     const token = await acquireToken(refreshToken);
@@ -221,7 +222,7 @@ async function createCompletion(
       }
     );
     if (result.headers["content-type"].indexOf("text/event-stream") == -1) {
-      result.data.on("data", buffer => logger.error(buffer.toString()));
+      result.data.on("data", (buffer) => logger.error(buffer.toString()));
       throw new APIException(
         EX.API_REQUEST_FAILED,
         `Stream response Content-Type invalid: ${result.headers["content-type"]}`
@@ -236,8 +237,8 @@ async function createCompletion(
     );
 
     // 异步移除会话
-    removeConversation(answer.id, refreshToken, assistantId).catch((err) =>
-      !refConvId && console.error(err)
+    removeConversation(answer.id, refreshToken, assistantId).catch(
+      (err) => !refConvId && console.error(err)
     );
 
     return answer;
@@ -272,7 +273,7 @@ async function createCompletionStream(
   messages: any[],
   refreshToken: string,
   assistantId = DEFAULT_ASSISTANT_ID,
-  refConvId = '',
+  refConvId = "",
   retryCount = 0
 ) {
   return (async () => {
@@ -282,13 +283,12 @@ async function createCompletionStream(
     const refFileUrls = extractRefFileUrls(messages);
     const refs = refFileUrls.length
       ? await Promise.all(
-        refFileUrls.map((fileUrl) => uploadFile(fileUrl, refreshToken))
-      )
+          refFileUrls.map((fileUrl) => uploadFile(fileUrl, refreshToken))
+        )
       : [];
 
     // 如果引用对话ID不正确则重置引用
-    if (!/[0-9a-zA-Z]{24}/.test(refConvId))
-      refConvId = '';
+    if (!/[0-9a-zA-Z]{24}/.test(refConvId)) refConvId = "";
 
     // 请求流
     const token = await acquireToken(refreshToken);
@@ -328,7 +328,7 @@ async function createCompletionStream(
         `Invalid response Content-Type:`,
         result.headers["content-type"]
       );
-      result.data.on("data", buffer => logger.error(buffer.toString()));
+      result.data.on("data", (buffer) => logger.error(buffer.toString()));
       const transStream = new PassThrough();
       transStream.end(
         `data: ${JSON.stringify({
@@ -359,8 +359,8 @@ async function createCompletionStream(
         `Stream has completed transfer ${util.timestamp() - streamStartTime}ms`
       );
       // 流传输结束后异步移除会话
-      removeConversation(convId, refreshToken, assistantId).catch((err) =>
-        !refConvId && console.error(err)
+      removeConversation(convId, refreshToken, assistantId).catch(
+        (err) => !refConvId && console.error(err)
       );
     });
   })().catch((err) => {
@@ -391,7 +391,10 @@ async function generateImages(
   return (async () => {
     logger.info(prompt);
     const messages = [
-      { role: "user", content: prompt.indexOf('画') == -1 ? `请画：${prompt}` : prompt },
+      {
+        role: "user",
+        content: prompt.indexOf("画") == -1 ? `请画：${prompt}` : prompt,
+      },
     ];
     // 请求流
     const token = await acquireToken(refreshToken);
@@ -458,6 +461,180 @@ async function generateImages(
   });
 }
 
+async function generateVideos(
+  model = "cogvideox",
+  prompt: string,
+  refreshToken: string,
+  options: {
+    imageUrl: string;
+    videoStyle: string;
+    emotionalAtmosphere: string;
+    mirrorMode: string;
+    audioId: string;
+  },
+  refConvId = "",
+  retryCount = 0
+) {
+  return (async () => {
+    logger.info(prompt);
+
+    // 如果引用对话ID不正确则重置引用
+    if (!/[0-9a-zA-Z]{24}/.test(refConvId)) refConvId = "";
+
+    const sourceList = [];
+    if (model == "cogvideox-pro") {
+      const imageUrls = await generateImages(undefined, prompt, refreshToken);
+      options.imageUrl = imageUrls[0];
+    }
+    if (options.imageUrl) {
+      const { source_id: sourceId } = await uploadFile(
+        options.imageUrl,
+        refreshToken,
+        true
+      );
+      sourceList.push(sourceId);
+    }
+
+    // 发起生成请求
+    let token = await acquireToken(refreshToken);
+    const result = await axios.post(
+      `https://chatglm.cn/chatglm/video-api/v1/chat`,
+      {
+        conversation_id: refConvId,
+        prompt,
+        source_list: sourceList.length > 0 ? sourceList : undefined,
+        advanced_parameter_extra: {
+          emotional_atmosphere: options.emotionalAtmosphere,
+          mirror_mode: options.mirrorMode,
+          video_style: options.videoStyle,
+        },
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Referer: "https://chatglm.cn/video",
+          "X-Device-Id": util.uuid(false),
+          "X-Request-Id": util.uuid(false),
+          ...FAKE_HEADERS,
+        },
+        // 30秒超时
+        timeout: 30000,
+        validateStatus: () => true,
+      }
+    );
+    const { result: _result } = checkResult(result, refreshToken);
+    const { chat_id: chatId, conversation_id: convId } = _result;
+
+    // 轮询生成进度
+    const startTime = util.unixTimestamp();
+    const results = [];
+    while (true) {
+      if (util.unixTimestamp() - startTime > 600)
+        throw new APIException(EX.API_VIDEO_GENERATION_FAILED);
+      const token = await acquireToken(refreshToken);
+      const result = await axios.get(
+        `https://chatglm.cn/chatglm/video-api/v1/chat/status/${chatId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Referer: "https://chatglm.cn/video",
+            "X-Device-Id": util.uuid(false),
+            "X-Request-Id": util.uuid(false),
+            ...FAKE_HEADERS,
+          },
+          // 30秒超时
+          timeout: 30000,
+          validateStatus: () => true,
+        }
+      );
+      const { result: _result } = checkResult(result, refreshToken);
+      const {
+        status,
+        msg,
+        plan,
+        cover_url,
+        video_url,
+        video_duration,
+        resolution,
+      } = _result;
+      if (status != "init" && status != "processing") {
+        if (status != "finished")
+          throw new APIException(EX.API_VIDEO_GENERATION_FAILED);
+        let videoUrl = video_url;
+        if (options.audioId) {
+          const [key, id] = options.audioId.split("-");
+          const token = await acquireToken(refreshToken);
+          const result = await axios.post(
+            `https://chatglm.cn/chatglm/video-api/v1/static/composite_video`,
+            {
+              chat_id: chatId,
+              key,
+              audio_id: id,
+            },
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+                Referer: "https://chatglm.cn/video",
+                "X-Device-Id": util.uuid(false),
+                "X-Request-Id": util.uuid(false),
+                ...FAKE_HEADERS,
+              },
+              // 30秒超时
+              timeout: 30000,
+              validateStatus: () => true,
+            }
+          );
+          const { result: _result } = checkResult(result, refreshToken);
+          videoUrl = _result.url;
+        }
+        results.push({
+          conversation_id: convId,
+          cover_url,
+          video_url: videoUrl,
+          video_duration,
+          resolution,
+        });
+        break;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    }
+
+    //https://chatglm.cn/chatglm/video-api/v1/reference/audio_group
+
+    axios
+      .delete(`https://chatglm.cn/chatglm/video-api/v1/chat/${chatId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Referer: "https://chatglm.cn/video",
+          "X-Device-Id": util.uuid(false),
+          "X-Request-Id": util.uuid(false),
+          ...FAKE_HEADERS,
+        },
+        validateStatus: () => true,
+      })
+      .catch((err) => logger.error("移除视频生成记录失败：", err));
+
+    return results;
+  })().catch((err) => {
+    if (retryCount < MAX_RETRY_COUNT) {
+      logger.error(`Video generation error: ${err.message}`);
+      logger.warn(`Try again after ${RETRY_DELAY / 1000}s...`);
+      return (async () => {
+        await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY));
+        return generateVideos(
+          model,
+          prompt,
+          refreshToken,
+          options,
+          refConvId,
+          retryCount + 1
+        );
+      })();
+    }
+    throw err;
+  });
+}
+
 /**
  * 提取消息中引用的文件URL
  *
@@ -508,24 +685,22 @@ function messagesPrepare(messages: any[], refs: any[], isRefConv = false) {
   if (isRefConv || messages.length < 2) {
     content = messages.reduce((content, message) => {
       if (_.isArray(message.content)) {
-        return (
-          message.content.reduce((_content, v) => {
-            if (!_.isObject(v) || v["type"] != "text") return _content;
-            return _content + (v["text"] || "") + "\n";
-          }, content)
-        );
+        return message.content.reduce((_content, v) => {
+          if (!_.isObject(v) || v["type"] != "text") return _content;
+          return _content + (v["text"] || "") + "\n";
+        }, content);
       }
       return content + `${message.content}\n`;
     }, "");
     logger.info("\n透传内容：\n" + content);
-  }
-  else {
+  } else {
     // 检查最新消息是否含有"type": "image_url"或"type": "file",如果有则注入消息
     let latestMessage = messages[messages.length - 1];
     let hasFileOrImage =
       Array.isArray(latestMessage.content) &&
       latestMessage.content.some(
-        (v) => typeof v === "object" && ["file", "image_url"].includes(v["type"])
+        (v) =>
+          typeof v === "object" && ["file", "image_url"].includes(v["type"])
       );
     if (hasFileOrImage) {
       let newFileMessage = {
@@ -550,12 +725,10 @@ function messagesPrepare(messages: any[], refs: any[], isRefConv = false) {
           .replace("assistant", "<|assistant|>")
           .replace("user", "<|user|>");
         if (_.isArray(message.content)) {
-          return (
-            message.content.reduce((_content, v) => {
-              if (!_.isObject(v) || v["type"] != "text") return _content;
-              return _content + (`${role}\n` + v["text"] || "") + "\n";
-            }, content)
-          );
+          return message.content.reduce((_content, v) => {
+            if (!_.isObject(v) || v["type"] != "text") return _content;
+            return _content + (`${role}\n` + v["text"] || "") + "\n";
+          }, content);
         }
         return (content += `${role}\n${message.content}\n`);
       }, "") + "<|assistant|>\n"
@@ -582,19 +755,19 @@ function messagesPrepare(messages: any[], refs: any[], isRefConv = false) {
         ...(fileRefs.length == 0
           ? []
           : [
-            {
-              type: "file",
-              file: fileRefs,
-            },
-          ]),
+              {
+                type: "file",
+                file: fileRefs,
+              },
+            ]),
         ...(imageRefs.length == 0
           ? []
           : [
-            {
-              type: "image",
-              image: imageRefs,
-            },
-          ]),
+              {
+                type: "image",
+                image: imageRefs,
+              },
+            ]),
       ],
     },
   ];
@@ -632,8 +805,13 @@ async function checkFileUrl(fileUrl: string) {
  *
  * @param fileUrl 文件URL
  * @param refreshToken 用于刷新access_token的refresh_token
+ * @param isVideoImage 是否是用于视频图像
  */
-async function uploadFile(fileUrl: string, refreshToken: string) {
+async function uploadFile(
+  fileUrl: string,
+  refreshToken: string,
+  isVideoImage: boolean = false
+) {
   // 预检查远程文件URL可用性
   await checkFileUrl(fileUrl);
 
@@ -660,6 +838,22 @@ async function uploadFile(fileUrl: string, refreshToken: string) {
   // 获取文件的MIME类型
   mimeType = mimeType || mime.getType(filename);
 
+  if (isVideoImage) {
+    const im = sharp(fileData).resize(1440, null, {
+      fit: "inside", // 保持宽高比
+    });
+    const metadata = await im.metadata();
+    const cropHeight = metadata.height > 960 ? 960 : metadata.height;
+    fileData = await im
+      .extract({
+        width: 1440,
+        height: cropHeight,
+        left: 0,
+        top: (metadata.height - cropHeight) / 2,
+      })
+      .toBuffer();
+  }
+
   const formData = new FormData();
   formData.append("file", fileData, {
     filename,
@@ -670,7 +864,9 @@ async function uploadFile(fileUrl: string, refreshToken: string) {
   const token = await acquireToken(refreshToken);
   let result = await axios.request({
     method: "POST",
-    url: "https://chatglm.cn/chatglm/backend-api/assistant/file_upload",
+    url: isVideoImage
+      ? "https://chatglm.cn/chatglm/video-api/v1/static/upload"
+      : "https://chatglm.cn/chatglm/backend-api/assistant/file_upload",
     data: formData,
     // 100M限制
     maxBodyLength: FILE_MAX_SIZE,
@@ -678,7 +874,9 @@ async function uploadFile(fileUrl: string, refreshToken: string) {
     timeout: 60000,
     headers: {
       Authorization: `Bearer ${token}`,
-      Referer: `https://chatglm.cn/`,
+      Referer: isVideoImage
+        ? "https://chatglm.cn/video"
+        : "https://chatglm.cn/",
       ...FAKE_HEADERS,
       ...formData.getHeaders(),
     },
@@ -731,7 +929,7 @@ async function receiveStream(stream: any): Promise<any> {
     let codeTemp = "";
     let lastExecutionOutput = "";
     let textOffset = 0;
-    let refContent = '';
+    let refContent = "";
     const parser = createParser((event) => {
       try {
         if (event.type !== "event") return;
@@ -835,7 +1033,13 @@ async function receiveStream(stream: any): Promise<any> {
           data.choices[0].message.content += chunk;
         } else {
           data.choices[0].message.content =
-            data.choices[0].message.content.replace(/【\d+†(来源|source)】/g, "") + (refContent ? `\n\n搜索结果来自：\n${refContent.replace(/\n$/, '')}` : '');
+            data.choices[0].message.content.replace(
+              /【\d+†(来源|源|source)】/g,
+              ""
+            ) +
+            (refContent
+              ? `\n\n搜索结果来自：\n${refContent.replace(/\n$/, "")}`
+              : "");
           resolve(data);
         }
       } catch (err) {
@@ -1008,8 +1212,8 @@ function createTransStream(stream: any, endCallback?: Function) {
               index: 0,
               delta:
                 result.status == "intervene" &&
-                  result.last_error &&
-                  result.last_error.intervene_text
+                result.last_error &&
+                result.last_error.intervene_text
                   ? { content: `\n\n${result.last_error.intervene_text}` }
                   : {},
               finish_reason: "stop",
@@ -1082,16 +1286,12 @@ async function receiveImages(
                   imageUrls.push(value.image_url);
                 });
               }
-              if (
-                type == "text" &&
-                partStatus == "finish"
-              ) {
+              if (type == "text" && partStatus == "finish") {
                 const urlPattern = /\((https?:\/\/\S+)\)/g;
                 let match;
                 while ((match = urlPattern.exec(text)) !== null) {
                   const url = match[1];
-                  if (imageUrls.indexOf(url) == -1)
-                    imageUrls.push(url);
+                  if (imageUrls.indexOf(url) == -1) imageUrls.push(url);
                 }
               }
             });
@@ -1168,8 +1368,7 @@ async function getTokenLiveStatus(refreshToken: string) {
     const { result: _result } = checkResult(result, refreshToken);
     const { accessToken } = _result;
     return !!accessToken;
-  }
-  catch (err) {
+  } catch (err) {
     return false;
   }
 }
@@ -1178,6 +1377,7 @@ export default {
   createCompletion,
   createCompletionStream,
   generateImages,
+  generateVideos,
   getTokenLiveStatus,
   tokenSplit,
 };
