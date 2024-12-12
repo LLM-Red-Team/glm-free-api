@@ -1,175 +1,176 @@
-# GLM AI Free 服务
+# GLM AI Free Service
 
 [![](https://img.shields.io/github/license/llm-red-team/glm-free-api.svg)](LICENSE)
 ![](https://img.shields.io/github/stars/llm-red-team/glm-free-api.svg)
 ![](https://img.shields.io/github/forks/llm-red-team/glm-free-api.svg)
 ![](https://img.shields.io/docker/pulls/vinlic/glm-free-api.svg)
 
-支持高速流式输出、支持多轮对话、支持智能体对话、支持视频生成、支持AI绘图、支持联网搜索、支持长文档解读、支持图像解析，零配置部署，多路token支持，自动清理会话痕迹。
+Supports high-speed streaming output, multi-turn dialogues, internet search, long document reading, image analysis, zero-configuration deployment, multi-token support, and automatic session trace cleanup.
 
-与ChatGPT接口完全兼容。
+Fully compatible with the ChatGPT interface.
 
-还有以下九个free-api欢迎关注：
+Also, the following free APIs are available for your attention:
 
-Moonshot AI（Kimi.ai）接口转API [kimi-free-api](https://github.com/LLM-Red-Team/kimi-free-api)
+Moonshot AI (Kimi.ai) API to API [kimi-free-api](https://github.com/LLM-Red-Team/kimi-free-api/tree/master)
 
-阶跃星辰 (跃问StepChat) 接口转API [step-free-api](https://github.com/LLM-Red-Team/step-free-api)
+StepFun (StepChat) API to API [step-free-api](https://github.com/LLM-Red-Team/step-free-api)
 
-阿里通义 (Qwen) 接口转API [qwen-free-api](https://github.com/LLM-Red-Team/qwen-free-api)
+Ali Tongyi (Qwen) API to API [qwen-free-api](https://github.com/LLM-Red-Team/qwen-free-api)
 
-秘塔AI (Metaso) 接口转API [metaso-free-api](https://github.com/LLM-Red-Team/metaso-free-api)
+ZhipuAI (ChatGLM) API to API [glm-free-api](https://github.com/LLM-Red-Team/glm-free-api)
 
-字节跳动（豆包）接口转API [doubao-free-api](https://github.com/LLM-Red-Team/doubao-free-api)
+ByteDance (Doubao) API to API [doubao-free-api](https://github.com/LLM-Red-Team/doubao-free-api)
 
-讯飞星火（Spark）接口转API [spark-free-api](https://github.com/LLM-Red-Team/spark-free-api)
+Meta Sota (metaso) API to API [metaso-free-api](https://github.com/LLM-Red-Team/metaso-free-api)
 
-MiniMax（海螺AI）接口转API [hailuo-free-api](https://github.com/LLM-Red-Team/hailuo-free-api)
+Iflytek Spark (Spark) API to API [spark-free-api](https://github.com/LLM-Red-Team/spark-free-api)
 
-深度求索（DeepSeek）接口转API [deepseek-free-api](https://github.com/LLM-Red-Team/deepseek-free-api)
+MiniMax（Hailuo）API to API [hailuo-free-api](https://github.com/LLM-Red-Team/hailuo-free-api)
 
-聆心智能 (Emohaa) 接口转API [emohaa-free-api](https://github.com/LLM-Red-Team/emohaa-free-api)
+DeepSeek（DeepSeek）API to API [deepseek-free-api](https://github.com/LLM-Red-Team/deepseek-free-api)
 
-## 目录
+Lingxin Intelligence (Emohaa) API to API [emohaa-free-api](https://github.com/LLM-Red-Team/emohaa-free-api) (OUT OF ORDER)
 
-* [免责声明](#免责声明)
-* [在线体验](#在线体验)
-* [效果示例](#效果示例)
-* [接入准备](#接入准备)
-  * [智能体接入](#智能体接入)
-  * [多账号接入](#多账号接入)
-* [Docker部署](#Docker部署)
-  * [Docker-compose部署](#Docker-compose部署)
-* [Render部署](#Render部署)
-* [Vercel部署](#Vercel部署)
-* [原生部署](#原生部署)
-* [推荐使用客户端](#推荐使用客户端)
-* [接口列表](#接口列表)
-  * [对话补全](#对话补全)
-  * [视频生成](#视频生成)
-  * [AI绘图](#AI绘图)
-  * [文档解读](#文档解读)
-  * [图像解析](#图像解析)
-  * [refresh_token存活检测](#refresh_token存活检测)
-* [注意事项](#注意事项)
-  * [Nginx反代优化](#Nginx反代优化)
-  * [Token统计](#Token统计)
+## Table of Contents
+
+* [Announcement](#Announcement)
+* [Online Experience](#Online-Experience)
+* [Effect Examples](#Effect-Examples)
+* [Access Preparation](#Access-Preparation)
+    * [Agent Access](#Agent-Access)
+    * [Multiple Account Access](#Multiple-Account-Access)
+* [Docker Deployment](#Docker-Deployment)
+    * [Docker-compose Deployment](#Docker-compose-Deployment)
+    * [Render Deployment](#Render-Deployment)
+    * [Vercel Deployment](#Vercel-Deployment)
+* [Native Deployment](#Native-Deployment)
+* [Recommended Clients](#Recommended-Clients)
+* [Interface List](#Interface-List)
+    * [Conversation Completion](#Conversation-Completion)
+    * [Video Generation](#Video-Generation)
+    * [AI Drawing](#AI-Drawing)
+    * [Document Interpretation](#Document-Interpretation)
+    * [Image Analysis](#Image-Analysis)
+    * [Refresh_token Survival Detection](#Refresh_token-Survival-Detection)
+* [Notification](#Notification)
+    * [Nginx Anti-generation Optimization](#Nginx-Anti-generation-Optimization)
+    * [Token Statistics](#Token-Statistics)
 * [Star History](#star-history)
   
-## 免责声明
+## Announcement
 
-**逆向API是不稳定的，建议前往智谱AI官方 https://open.bigmodel.cn/ 付费使用API，避免封禁的风险。**
+**This API is unstable. So we highly recommend you go to the [Zhipu](https://open.bigmodel.cn/) use the offical API, avoiding banned.**
 
-**本组织和个人不接受任何资金捐助和交易，此项目是纯粹研究交流学习性质！**
+**This organization and individuals do not accept any financial donations and transactions. This project is purely for research, communication, and learning purposes!**
 
-**仅限自用，禁止对外提供服务或商用，避免对官方造成服务压力，否则风险自担！**
+**For personal use only, it is forbidden to provide services or commercial use externally to avoid causing service pressure on the official, otherwise, bear the risk yourself!**
 
-**仅限自用，禁止对外提供服务或商用，避免对官方造成服务压力，否则风险自担！**
+**For personal use only, it is forbidden to provide services or commercial use externally to avoid causing service pressure on the official, otherwise, bear the risk yourself!**
 
-**仅限自用，禁止对外提供服务或商用，避免对官方造成服务压力，否则风险自担！**
+**For personal use only, it is forbidden to provide services or commercial use externally to avoid causing service pressure on the official, otherwise, bear the risk yourself!**
 
-## 在线体验
-
-此链接仅临时测试功能，只有一路并发，如果遇到异常请稍后重试，建议自行部署使用。
+## Online Experience
+This link is only for temporary testing of functions and cannot be used for a long time. For long-term use, please deploy by yourself.
 
 https://udify.app/chat/Pe89TtaX3rKXM8NS
 
-## 效果示例
+## Effect Examples
 
-### 验明正身Demo
+### Identity Verification
 
-![验明正身](./doc/example-1.png)
+![Identity Verification](./doc/example-1.png)
 
-### 智能体对话Demo
+### AI-Agent
 
-对应智能体链接：[网抑云评论生成器](https://chatglm.cn/main/gdetail/65c046a531d3fcb034918abe)
+Agent link：[Comments Generator](https://chatglm.cn/main/gdetail/65c046a531d3fcb034918abe)
 
-![智能体对话](./doc/example-9.png)
+![AI-Agent](./doc/example-9.png)
 
-### 结合Dify工作流Demo
+### Combined with Dify workflow
 
-体验地址：https://udify.app/chat/m46YgeVLNzFh4zRs
+Experience link：https://udify.app/chat/m46YgeVLNzFh4zRs
 
 <img width="390" alt="image" src="https://github.com/LLM-Red-Team/glm-free-api/assets/20235341/4773b9f6-b1ca-460c-b3a7-c56bdb1f0659">
 
-### 多轮对话Demo
+### Multi-turn Dialogue
 
-![多轮对话](./doc/example-6.png)
+![Multi-turn Dialogue](./doc/example-6.png)
 
-### 视频生成Demo
+### Video Generation
 
-[点击预览](https://sfile.chatglm.cn/testpath/video/c1f59468-32fa-58c3-bd9d-ab4230cfe3ca_0.mp4)
+[View](https://sfile.chatglm.cn/testpath/video/c1f59468-32fa-58c3-bd9d-ab4230cfe3ca_0.mp4)
 
-### AI绘图Demo
+### AI Drawing
 
-![AI绘图](./doc/example-10.png)
+![AI Drawing](./doc/example-10.png)
 
-### 联网搜索Demo
+### Internet Search
 
-![联网搜索](./doc/example-2.png)
+![Internet Search](./doc/example-2.png)
 
-### 长文档解读Demo
+### Long Document Reading
 
-![长文档解读](./doc/example-5.png)
+![Long Document Reading](./doc/example-5.png)
 
-### 代码调用Demo
+### Using Code
 
-![代码调用](./doc/example-12.png)
+![Using Code](./doc/example-12.png)
 
-### 图像解析Demo
+### Image Analysis
 
-![图像解析](./doc/example-3.png)
+![Image Analysis](./doc/example-3.png)
 
-## 接入准备
+## Access Preparation
 
-从 [智谱清言](https://chatglm.cn/) 获取refresh_token
+Obtain `refresh_token` from [Zhipu](https://chatglm.cn/)
 
-进入智谱清言随便发起一个对话，然后F12打开开发者工具，从Application > Cookies中找到`chatglm_refresh_token`的值，这将作为Authorization的Bearer Token值：`Authorization: Bearer TOKEN`
+Enter Zhipu Qingyan and start a random conversation, then press F12 to open the developer tools. Find the value of `tongyi_sso_ticket` in Application > Cookies, which will be used as the Bearer Token value for Authorization: `Authorization: Bearer TOKEN`
 
 ![example0](./doc/example-0.png)
 
-### 智能体接入
+### Agent Access
 
-打开智能体的聊天界面，地址栏的一串ID就是智能体的ID，复制下来备用，这个值将用作调用时的 `model` 参数值。
+Open a window of Agent Chat, the ID in the url is the ID of the Agent, which is the parameter of `model`.
 
 ![example11](./doc/example-11.png)
 
-### 多账号接入
+### Multiple Account Access
 
-目前似乎限制同个账号同时只能有*一路*输出，你可以通过提供多个账号的chatglm_refresh_token并使用`,`拼接提供：
+You can provide multiple account chatglm_refresh_tokens and use `,` to join them:
 
 `Authorization: Bearer TOKEN1,TOKEN2,TOKEN3`
 
-每次请求服务会从中挑选一个。
+The service will pick one each time a request is made.
 
-## Docker部署
+## Docker Deployment
 
-请准备一台具有公网IP的服务器并将8000端口开放。
+Please prepare a server with a public IP and open port 8000.
 
-拉取镜像并启动服务
+Pull the image and start the service
 
 ```shell
-docker run -it -d --init --name glm-free-api -p 8000:8000 -e TZ=Asia/Shanghai vinlic/glm-free-api:latest
+docker run -it -d --init --name step-free-api -p 8000:8000 -e TZ=Asia/Shanghai vinlic/step-free-api:latest
 ```
 
-查看服务实时日志
+check real-time service logs
 
 ```shell
 docker logs -f glm-free-api
 ```
 
-重启服务
+Restart service
 
 ```shell
 docker restart glm-free-api
 ```
 
-停止服务
+Shut down service
 
 ```shell
 docker stop glm-free-api
 ```
 
-### Docker-compose部署
+### Docker-compose Deployment
 
 ```yaml
 version: '3'
@@ -185,24 +186,25 @@ services:
       - TZ=Asia/Shanghai
 ```
 
-### Render部署
+### Render Deployment
 
-**注意：部分部署区域可能无法连接glm，如容器日志出现请求超时或无法连接，请切换其他区域部署！**
-**注意：免费账户的容器实例将在一段时间不活动时自动停止运行，这会导致下次请求时遇到50秒或更长的延迟，建议查看[Render容器保活](https://github.com/LLM-Red-Team/free-api-hub/#Render%E5%AE%B9%E5%99%A8%E4%BF%9D%E6%B4%BB)**
+**Attention: Some deployment regions may not be able to connect to Kimi. If container logs show request timeouts or connection failures (Singapore has been tested and found unavailable), please switch to another deployment region!**
 
-1. fork本项目到你的github账号下。
+**Attention: Container instances for free accounts will automatically stop after a period of inactivity, which may result in a 50-second or longer delay during the next request. It is recommended to check [Render Container Keepalive](https://github.com/LLM-Red-Team/free-api-hub/#Render%E5%AE%B9%E5%99%A8%E4%BF%9D%E6%B4%BB)**
 
-2. 访问 [Render](https://dashboard.render.com/) 并登录你的github账号。
+1. Fork this project to your GitHub account.
 
-3. 构建你的 Web Service（New+ -> Build and deploy from a Git repository -> Connect你fork的项目 -> 选择部署区域 -> 选择实例类型为Free -> Create Web Service）。
+2. Visit [Render](https://dashboard.render.com/) and log in with your GitHub account.
 
-4. 等待构建完成后，复制分配的域名并拼接URL访问即可。
+3. Build your Web Service (`New+` -> `Build and deploy from a Git repository` -> `Connect your forked project` -> `Select deployment region` -> `Choose instance type as Free` -> `Create Web Service`).
 
-### Vercel部署
+4. After the build is complete, copy the assigned domain and append the URL to access it.
 
-**注意：Vercel免费账户的请求响应超时时间为10秒，但接口响应通常较久，可能会遇到Vercel返回的504超时错误！**
+### Vercel Deployment
 
-请先确保安装了Node.js环境。
+**Note: Vercel free accounts have a request response timeout of 10 seconds, but interface responses are usually longer, which may result in a 504 timeout error from Vercel!**
+
+Please ensure that Node.js environment is installed first.
 
 ```shell
 npm i -g vercel --registry http://registry.npmmirror.com
@@ -212,101 +214,100 @@ cd glm-free-api
 vercel --prod
 ```
 
-## 原生部署
+## Native Deployment
 
-请准备一台具有公网IP的服务器并将8000端口开放。
+Please prepare a server with a public IP and open port 8000.
 
-请先安装好Node.js环境并且配置好环境变量，确认node命令可用。
+Please install the Node.js environment and configure the environment variables first, and confirm that the node command is available.
 
-安装依赖
+Install dependencies
 
 ```shell
 npm i
 ```
 
-安装PM2进行进程守护
+Install PM2 for process guarding
 
 ```shell
 npm i -g pm2
 ```
 
-编译构建，看到dist目录就是构建完成
+Compile and build. When you see the dist directory, the build is complete.
 
 ```shell
 npm run build
 ```
 
-启动服务
+Start service
 
 ```shell
 pm2 start dist/index.js --name "glm-free-api"
 ```
 
-查看服务实时日志
+View real-time service logs
 
 ```shell
 pm2 logs glm-free-api
 ```
 
-重启服务
+Restart service
 
 ```shell
 pm2 reload glm-free-api
 ```
 
-停止服务
+Shut down service
 
 ```shell
 pm2 stop glm-free-api
 ```
 
-## 推荐使用客户端
+## Recommended Clients
 
-使用以下二次开发客户端接入free-api系列项目更快更简单，支持文档/图像上传！
+Using the following second-developed clients for free-api series projects is faster and easier, and supports document/image uploads!
 
-由 [Clivia](https://github.com/Yanyutin753/lobe-chat) 二次开发的LobeChat [https://github.com/Yanyutin753/lobe-chat](https://github.com/Yanyutin753/lobe-chat)
+[Clivia](https://github.com/Yanyutin753/lobe-chat)'s modified LobeChat [https://github.com/Yanyutin753/lobe-chat](https://github.com/Yanyutin753/lobe-chat)
 
-由 [时光@](https://github.com/SuYxh) 二次开发的ChatGPT Web [https://github.com/SuYxh/chatgpt-web-sea](https://github.com/SuYxh/chatgpt-web-sea)
+[Time@](https://github.com/SuYxh)'s modified ChatGPT Web [https://github.com/SuYxh/chatgpt-web-sea](https://github.com/SuYxh/chatgpt-web-sea)
 
-## 接口列表
+## interface List
 
-目前支持与openai兼容的 `/v1/chat/completions` 接口，可自行使用与openai或其他兼容的客户端接入接口，或者使用 [dify](https://dify.ai/) 等线上服务接入使用。
+Currently, the `/v1/chat/completions` interface compatible with openai is supported. You can use the client access interface compatible with openai or other clients, or use online services such as [dify](https://dify.ai/) Access and use.
 
-### 对话补全
+### Conversation Completion
 
-对话补全接口，与openai的 [chat-completions-api](https://platform.openai.com/docs/guides/text-generation/chat-completions-api) 兼容。
+Conversation completion interface, compatible with openai's [chat-completions-api](https://platform.openai.com/docs/guides/text-generation/chat-completions-api).
 
 **POST /v1/chat/completions**
 
-header 需要设置 Authorization 头部：
+The header needs to set the Authorization header:
 
 ```
 Authorization: Bearer [refresh_token]
 ```
 
-请求数据：
+Request data:
 ```json
 {
-    // 如果使用智能体请填写智能体ID到此处，否则可以乱填
+    // Except using the Agent to fill the ID, fill in the model name as you like.
     "model": "glm4",
-    // 目前多轮对话基于消息合并实现，某些场景可能导致能力下降且受单轮最大token数限制
-    // 如果您想获得原生的多轮对话体验，可以传入首轮消息获得的id，来接续上下文
+    // Currently, multi-round conversations are realized based on message merging, which in some scenarios may lead to capacity degradation and is limited by the maximum number of tokens in a single round.
+    // If you want a native multi-round dialog experience, you can pass in the ids obtained from the last round of messages to pick up the context
     // "conversation_id": "65f6c28546bae1f0fbb532de",
     "messages": [
         {
             "role": "user",
-            "content": "你叫什么？"
+            "content": "Who RU？"
         }
     ],
-    // 如果使用SSE流请设置为true，默认false
+    // If using SSE stream, please set it to true, the default is false
     "stream": false
 }
 ```
 
-响应数据：
+Response data：
 ```json
 {
-    // 如果想获得原生多轮对话体验，此id，你可以传入到下一轮对话的conversation_id来接续上下文
     "id": "65f6c28546bae1f0fbb532de",
     "model": "glm4",
     "object": "chat.completion",
@@ -315,7 +316,7 @@ Authorization: Bearer [refresh_token]
             "index": 0,
             "message": {
                 "role": "assistant",
-                "content": "我叫智谱清言，是基于智谱 AI 公司于 2023 年训练的 ChatGLM 开发的。我的任务是针对用户的问题和要求提供适当的答复和支持。"
+                "content": "My name is Zhipu Qingyan."
             },
             "finish_reason": "stop"
         }
@@ -329,21 +330,21 @@ Authorization: Bearer [refresh_token]
 }
 ```
 
-### 视频生成
+### Video Generation
 
-视频生成接口
+Video API
 
-**如果您的账号未开通VIP，可能会因排队导致生成耗时较久**
+**If you're not VIP, you will wait in line for a long time.**
 
 **POST /v1/videos/generations**
 
-header 需要设置 Authorization 头部：
+The header needs to set the Authorization header:
 
 ```
 Authorization: Bearer [refresh_token]
 ```
 
-请求数据：
+Request data:
 ```json
 {
     // 模型名称
@@ -363,7 +364,7 @@ Authorization: Bearer [refresh_token]
 }
 ```
 
-响应数据：
+Response data:
 ```json
 {
     "created": 1722103836,
@@ -384,28 +385,28 @@ Authorization: Bearer [refresh_token]
 }
 ```
 
-### AI绘图
+### AI Drawing
 
-图像生成接口，与openai的 [images-create-api](https://platform.openai.com/docs/api-reference/images/create) 兼容。
+This format is compatible with the [gpt-4-vision-preview](https://platform.openai.com/docs/guides/vision) API format.
 
 **POST /v1/images/generations**
 
-header 需要设置 Authorization 头部：
+The header needs to set the Authorization header:
 
 ```
 Authorization: Bearer [refresh_token]
 ```
 
-请求数据：
+Request data:
 ```json
 {
     // 如果使用智能体请填写智能体ID到此处，否则可以乱填
     "model": "cogview-3",
-    "prompt": "一只可爱的猫"
+    "prompt": "A cute cat"
 }
 ```
 
-响应数据：
+Response data:
 ```json
 {
     "created": 1711507449,
@@ -417,19 +418,19 @@ Authorization: Bearer [refresh_token]
 }
 ```
 
-### 文档解读
+### Document Interpretation
 
-提供一个可访问的文件URL或者BASE64_URL进行解析。
+Provide an accessible file URL or BASE64_URL to parse.
 
 **POST /v1/chat/completions**
 
-header 需要设置 Authorization 头部：
+The header needs to set the Authorization header:
 
 ```
 Authorization: Bearer [refresh_token]
 ```
 
-请求数据：
+Request data:
 ```json
 {
     // 如果使用智能体请填写智能体ID到此处，否则可以乱填
@@ -456,7 +457,7 @@ Authorization: Bearer [refresh_token]
 }
 ```
 
-响应数据：
+Response data:
 ```json
 {
     "id": "cnmuo7mcp7f9hjcmihn0",
@@ -481,21 +482,21 @@ Authorization: Bearer [refresh_token]
 }
 ```
 
-### 图像解析
+### Image Analysis
 
-提供一个可访问的图像URL或者BASE64_URL进行解析。
+Provide an accessible image URL or BASE64_URL to parse.
 
-此格式兼容 [gpt-4-vision-preview](https://platform.openai.com/docs/guides/vision) API格式，您也可以用这个格式传送文档进行解析。
+This format is compatible with the [gpt-4-vision-preview](https://platform.openai.com/docs/guides/vision) API format. You can also use this format to transmit documents for parsing.
 
 **POST /v1/chat/completions**
 
-header 需要设置 Authorization 头部：
+The header needs to set the Authorization header:
 
 ```
 Authorization: Bearer [refresh_token]
 ```
 
-请求数据：
+Request data:
 ```json
 {
     "model": "65c046a531d3fcb034918abe",
@@ -520,7 +521,7 @@ Authorization: Bearer [refresh_token]
 }
 ```
 
-响应数据：
+Response data:
 ```json
 {
     "id": "65f6c28546bae1f0fbb532de",
@@ -545,48 +546,48 @@ Authorization: Bearer [refresh_token]
 }
 ```
 
-### refresh_token存活检测
+### Refresh_token Survival Detection
 
-检测refresh_token是否存活，如果存活live未true，否则为false，请不要频繁（小于10分钟）调用此接口。
+Check whether refresh_token is alive. If live is not true, otherwise it is false. Please do not call this interface frequently (less than 10 minutes).
 
 **POST /token/check**
 
-请求数据：
+Request data:
 ```json
 {
     "token": "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9..."
 }
 ```
 
-响应数据：
+Response data:
 ```json
 {
     "live": true
 }
 ```
 
-## 注意事项
+## Notification
 
-### Nginx反代优化
+### Nginx Anti-generation Optimization
 
-如果您正在使用Nginx反向代理glm-free-api，请添加以下配置项优化流的输出效果，优化体验感。
+If you are using Nginx reverse proxy `glm-free-api`, please add the following configuration items to optimize the output effect of the stream and optimize the experience.
 
 ```nginx
-# 关闭代理缓冲。当设置为off时，Nginx会立即将客户端请求发送到后端服务器，并立即将从后端服务器接收到的响应发送回客户端。
+# Turn off proxy buffering. When set to off, Nginx will immediately send client requests to the backend server and immediately send responses received from the backend server back to the client.
 proxy_buffering off;
-# 启用分块传输编码。分块传输编码允许服务器为动态生成的内容分块发送数据，而不需要预先知道内容的大小。
+# Enable chunked transfer encoding. Chunked transfer encoding allows servers to send data in chunks for dynamically generated content without knowing the size of the content in advance.
 chunked_transfer_encoding on;
-# 开启TCP_NOPUSH，这告诉Nginx在数据包发送到客户端之前，尽可能地发送数据。这通常在sendfile使用时配合使用，可以提高网络效率。
+# Turn on TCP_NOPUSH, which tells Nginx to send as much data as possible before sending the packet to the client. This is usually used in conjunction with sendfile to improve network efficiency.
 tcp_nopush on;
-# 开启TCP_NODELAY，这告诉Nginx不延迟发送数据，立即发送小数据包。在某些情况下，这可以减少网络的延迟。
+# Turn on TCP_NODELAY, which tells Nginx not to delay sending data and to send small data packets immediately. In some cases, this can reduce network latency.
 tcp_nodelay on;
-# 设置保持连接的超时时间，这里设置为120秒。如果在这段时间内，客户端和服务器之间没有进一步的通信，连接将被关闭。
+#Set the timeout to keep the connection, here it is set to 120 seconds. If there is no further communication between client and server during this time, the connection will be closed.
 keepalive_timeout 120;
 ```
 
-### Token统计
+### Token Statistics
 
-由于推理侧不在glm-free-api，因此token不可统计，将以固定数字返回。
+Since the inference side is not in glm-free-api, the token cannot be counted and will be returned as a fixed number!!!!!
 
 ## Star History
 
