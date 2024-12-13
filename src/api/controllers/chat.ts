@@ -991,7 +991,7 @@ async function receiveStream(stream: any): Promise<any> {
                 textOffset += imageText.length;
                 toolCall = true;
                 return innerStr + imageText;
-              } else if (type == "code" && partStatus == "init") {
+              } else if (type == "code" && status == "init") {
                 let codeHead = "";
                 if (!codeGenerating) {
                   codeGenerating = true;
@@ -1003,7 +1003,7 @@ async function receiveStream(stream: any): Promise<any> {
                 return innerStr + codeHead + chunk;
               } else if (
                 type == "code" &&
-                partStatus == "finish" &&
+                status == "finish" &&
                 codeGenerating
               ) {
                 const codeFooter = "\n```\n";
@@ -1014,7 +1014,7 @@ async function receiveStream(stream: any): Promise<any> {
               } else if (
                 type == "execution_output" &&
                 _.isString(content) &&
-                partStatus == "done" &&
+                status == "finish" &&
                 lastExecutionOutput != content
               ) {
                 lastExecutionOutput = content;
@@ -1154,7 +1154,7 @@ function createTransStream(stream: any, endCallback?: Function) {
               textOffset += imageText.length;
               toolCall = true;
               return innerStr + imageText;
-            } else if (type == "code" && partStatus == "init") {
+            } else if (type == "code" && status == "init") {
               let codeHead = "";
               if (!codeGenerating) {
                 codeGenerating = true;
@@ -1166,7 +1166,7 @@ function createTransStream(stream: any, endCallback?: Function) {
               return innerStr + codeHead + chunk;
             } else if (
               type == "code" &&
-              partStatus == "finish" &&
+              status == "finish" &&
               codeGenerating
             ) {
               const codeFooter = "\n```\n";
@@ -1177,7 +1177,7 @@ function createTransStream(stream: any, endCallback?: Function) {
             } else if (
               type == "execution_output" &&
               _.isString(content) &&
-              partStatus == "done" &&
+              status == "finish" &&
               lastExecutionOutput != content
             ) {
               lastExecutionOutput = content;
