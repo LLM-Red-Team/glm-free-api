@@ -13,7 +13,7 @@
 
 与ChatGPT接口完全兼容。
 
-还有以下九个free-api欢迎关注：
+还有以下十个free-api欢迎关注：
 
 Moonshot AI（Kimi.ai）接口转API [kimi-free-api](https://github.com/LLM-Red-Team/kimi-free-api)
 
@@ -24,6 +24,8 @@ Moonshot AI（Kimi.ai）接口转API [kimi-free-api](https://github.com/LLM-Red-
 秘塔AI (Metaso) 接口转API [metaso-free-api](https://github.com/LLM-Red-Team/metaso-free-api)
 
 字节跳动（豆包）接口转API [doubao-free-api](https://github.com/LLM-Red-Team/doubao-free-api)
+
+字节跳动（即梦AI）接口转API [jimeng-free-api](https://github.com/LLM-Red-Team/jimeng-free-api)
 
 讯飞星火（Spark）接口转API [spark-free-api](https://github.com/LLM-Red-Team/spark-free-api)
 
@@ -36,7 +38,6 @@ MiniMax（海螺AI）接口转API [hailuo-free-api](https://github.com/LLM-Red-T
 ## 目录
 
 * [免责声明](#免责声明)
-* [在线体验](#在线体验)
 * [效果示例](#效果示例)
 * [接入准备](#接入准备)
   * [智能体接入](#智能体接入)
@@ -70,12 +71,6 @@ MiniMax（海螺AI）接口转API [hailuo-free-api](https://github.com/LLM-Red-T
 **仅限自用，禁止对外提供服务或商用，避免对官方造成服务压力，否则风险自担！**
 
 **仅限自用，禁止对外提供服务或商用，避免对官方造成服务压力，否则风险自担！**
-
-## 在线体验
-
-此链接仅临时测试功能，只有一路并发，如果遇到异常请稍后重试，建议自行部署使用。
-
-https://udify.app/chat/Pe89TtaX3rKXM8NS
 
 ## 效果示例
 
