@@ -191,7 +191,7 @@ async function createCompletion(
     // 如果引用对话ID不正确则重置引用
     if (!/[0-9a-zA-Z]{24}/.test(refConvId)) refConvId = "";
 
-    let assistantId = /^[a-z0-9]{24,}$/.test(model) ? model : undefined;
+    let assistantId = /^[a-z0-9]{24,}$/.test(model) ? model : DEFAULT_ASSISTANT_ID;
 
     if(model.indexOf('think') != -1 || model.indexOf('zero') != -1) {
       assistantId = ZERO_ASSISTANT_ID;
@@ -302,7 +302,7 @@ async function createCompletionStream(
     // 如果引用对话ID不正确则重置引用
     if (!/[0-9a-zA-Z]{24}/.test(refConvId)) refConvId = "";
 
-    let assistantId = /^[a-z0-9]{24,}$/.test(model) ? model : undefined;
+    let assistantId = /^[a-z0-9]{24,}$/.test(model) ? model : DEFAULT_ASSISTANT_ID;
 
     if(model.indexOf('think') != -1 || model.indexOf('zero') != -1) {
       assistantId = ZERO_ASSISTANT_ID;
