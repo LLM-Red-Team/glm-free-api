@@ -17,6 +17,8 @@ import util from "@/lib/util.ts";
 const MODEL_NAME = "glm";
 // 默认的智能体ID，GLM4
 const DEFAULT_ASSISTANT_ID = "65940acff94777010aa6b796";
+// zero推理模型智能体ID
+const ZERO_ASSISTANT_ID = "676411c38945bbc58a905d31";
 // access_token有效期
 const ACCESS_TOKEN_EXPIRES = 3600;
 // 最大重试次数
@@ -165,13 +167,13 @@ async function removeConversation(
  *
  * @param messages 参考gpt系列消息格式，多轮对话请完整提供上下文
  * @param refreshToken 用于刷新access_token的refresh_token
- * @param assistantId 智能体ID，默认使用GLM4原版
+ * @param model 智能体ID，默认使用GLM4原版
  * @param retryCount 重试次数
  */
 async function createCompletion(
   messages: any[],
   refreshToken: string,
-  assistantId = DEFAULT_ASSISTANT_ID,
+  model = MODEL_NAME,
   refConvId = "",
   retryCount = 0
 ) {
@@ -189,6 +191,13 @@ async function createCompletion(
     // 如果引用对话ID不正确则重置引用
     if (!/[0-9a-zA-Z]{24}/.test(refConvId)) refConvId = "";
 
+    let assistantId = /^[a-z0-9]{24,}$/.test(model) ? model : undefined;
+
+    if(model.indexOf('think') != -1 || model.indexOf('zero') != -1) {
+      assistantId = ZERO_ASSISTANT_ID;
+      logger.info('使用思考模型');
+    }
+
     // 请求流
     const token = await acquireToken(refreshToken);
     const result = await axios.post(
@@ -200,8 +209,11 @@ async function createCompletion(
         meta_data: {
           channel: "",
           draft_id: "",
+          if_plus_model: true,
           input_question_type: "xxxx",
           is_test: false,
+          platform: "pc",
+          quote_log_id: ""
         },
       },
       {
@@ -231,7 +243,7 @@ async function createCompletion(
 
     const streamStartTime = util.timestamp();
     // 接收流为输出文本
-    const answer = await receiveStream(result.data);
+    const answer = await receiveStream(model, result.data);
     logger.success(
       `Stream has completed transfer ${util.timestamp() - streamStartTime}ms`
     );
@@ -251,7 +263,7 @@ async function createCompletion(
         return createCompletion(
           messages,
           refreshToken,
-          assistantId,
+          model,
           refConvId,
           retryCount + 1
         );
@@ -266,13 +278,13 @@ async function createCompletion(
  *
  * @param messages 参考gpt系列消息格式，多轮对话请完整提供上下文
  * @param refreshToken 用于刷新access_token的refresh_token
- * @param assistantId 智能体ID，默认使用GLM4原版
+ * @param model 智能体ID，默认使用GLM4原版
  * @param retryCount 重试次数
  */
 async function createCompletionStream(
   messages: any[],
   refreshToken: string,
-  assistantId = DEFAULT_ASSISTANT_ID,
+  model = MODEL_NAME,
   refConvId = "",
   retryCount = 0
 ) {
@@ -290,6 +302,13 @@ async function createCompletionStream(
     // 如果引用对话ID不正确则重置引用
     if (!/[0-9a-zA-Z]{24}/.test(refConvId)) refConvId = "";
 
+    let assistantId = /^[a-z0-9]{24,}$/.test(model) ? model : undefined;
+
+    if(model.indexOf('think') != -1 || model.indexOf('zero') != -1) {
+      assistantId = ZERO_ASSISTANT_ID;
+      logger.info('使用思考模型');
+    }
+
     // 请求流
     const token = await acquireToken(refreshToken);
     const result = await axios.post(
@@ -301,8 +320,11 @@ async function createCompletionStream(
         meta_data: {
           channel: "",
           draft_id: "",
+          if_plus_model: true,
           input_question_type: "xxxx",
           is_test: false,
+          platform: "pc",
+          quote_log_id: ""
         },
       },
       {
@@ -354,7 +376,7 @@ async function createCompletionStream(
 
     const streamStartTime = util.timestamp();
     // 创建转换流将消息格式转换为gpt兼容格式
-    return createTransStream(result.data, (convId: string) => {
+    return createTransStream(model, result.data, (convId: string) => {
       logger.success(
         `Stream has completed transfer ${util.timestamp() - streamStartTime}ms`
       );
@@ -372,7 +394,7 @@ async function createCompletionStream(
         return createCompletionStream(
           messages,
           refreshToken,
-          assistantId,
+          model,
           refConvId,
           retryCount + 1
         );
@@ -407,8 +429,11 @@ async function generateImages(
         meta_data: {
           channel: "",
           draft_id: "",
+          if_plus_model: true,
           input_question_type: "xxxx",
           is_test: false,
+          platform: "pc",
+          quote_log_id: ""
         },
       },
       {
@@ -904,14 +929,15 @@ function checkResult(result: AxiosResponse, refreshToken: string) {
 /**
  * 从流接收完整的消息内容
  *
+ * @param model 模型
  * @param stream 消息流
  */
-async function receiveStream(stream: any): Promise<any> {
+async function receiveStream(model: string, stream: any): Promise<any> {
   return new Promise((resolve, reject) => {
     // 消息初始化
     const data = {
       id: "",
-      model: MODEL_NAME,
+      model,
       object: "chat.completion",
       choices: [
         {
@@ -923,6 +949,8 @@ async function receiveStream(stream: any): Promise<any> {
       usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
       created: util.unixTimestamp(),
     };
+    const isSilentModel = model.indexOf('silent') != -1;
+    let thinkingText = "";
     let toolCall = false;
     let codeGenerating = false;
     let textChunkLength = 0;
@@ -930,6 +958,7 @@ async function receiveStream(stream: any): Promise<any> {
     let lastExecutionOutput = "";
     let textOffset = 0;
     let refContent = "";
+    logger.info(`是否静默模型: ${isSilentModel}`);
     const parser = createParser((event) => {
       try {
         if (event.type !== "event") return;
@@ -957,6 +986,7 @@ async function receiveStream(stream: any): Promise<any> {
                 textChunkLength = 0;
                 innerStr += "\n";
               }
+
               if (type == "text") {
                 if (toolCall) {
                   innerStr += "\n";
@@ -965,11 +995,20 @@ async function receiveStream(stream: any): Promise<any> {
                 }
                 if (partStatus == "finish") textChunkLength = text.length;
                 return innerStr + text;
-              } else if (
+              } else if (type == "text_thinking" && !isSilentModel) {
+                if (toolCall) {
+                  innerStr += "\n";
+                  textOffset++;
+                  toolCall = false;
+                }
+                thinkingText = text;
+                return innerStr;
+              }else if (
                 type == "quote_result" &&
                 status == "finish" &&
                 meta_data &&
-                _.isArray(meta_data.metadata_list)
+                _.isArray(meta_data.metadata_list) &&
+                !isSilentModel
               ) {
                 refContent = meta_data.metadata_list.reduce((meta, v) => {
                   return meta + `${v.title} - ${v.url}\n`;
@@ -1032,6 +1071,8 @@ async function receiveStream(stream: any): Promise<any> {
           );
           data.choices[0].message.content += chunk;
         } else {
+          if(thinkingText)
+            data.choices[0].message.content = `[思考开始]\n${thinkingText}[思考结束]\n\n${data.choices[0].message.content}`;
           data.choices[0].message.content =
             data.choices[0].message.content.replace(
               /【\d+†(来源|源|source)】/g,
@@ -1059,18 +1100,22 @@ async function receiveStream(stream: any): Promise<any> {
  *
  * 将流格式转换为gpt兼容流格式
  *
+ * @param model 模型
  * @param stream 消息流
  * @param endCallback 传输结束回调
  */
-function createTransStream(stream: any, endCallback?: Function) {
+function createTransStream(model: string, stream: any, endCallback?: Function) {
   // 消息创建时间
   const created = util.unixTimestamp();
   // 创建转换流
   const transStream = new PassThrough();
+  const isSilentModel = model.indexOf('silent') != -1;
   let content = "";
+  let thinking = false;
   let toolCall = false;
   let codeGenerating = false;
   let textChunkLength = 0;
+  let thinkingText = "";
   let codeTemp = "";
   let lastExecutionOutput = "";
   let textOffset = 0;
@@ -1078,7 +1123,7 @@ function createTransStream(stream: any, endCallback?: Function) {
     transStream.write(
       `data: ${JSON.stringify({
         id: "",
-        model: MODEL_NAME,
+        model,
         object: "chat.completion.chunk",
         choices: [
           {
@@ -1116,6 +1161,11 @@ function createTransStream(stream: any, endCallback?: Function) {
               innerStr += "\n";
             }
             if (type == "text") {
+              if(thinking) {
+                innerStr += "[思考结束]\n\n"
+                textOffset = thinkingText.length + 8;
+                thinking = false;
+              }
               if (toolCall) {
                 innerStr += "\n";
                 textOffset++;
@@ -1123,11 +1173,26 @@ function createTransStream(stream: any, endCallback?: Function) {
               }
               if (partStatus == "finish") textChunkLength = text.length;
               return innerStr + text;
+            } else if (type == "text_thinking" && !isSilentModel) {
+              if(!thinking) {
+                innerStr += "[思考开始]\n";
+                textOffset = 7;
+                thinking = true;
+              }
+              if (toolCall) {
+                innerStr += "\n";
+                textOffset++;
+                toolCall = false;
+              }
+              if (partStatus == "finish") textChunkLength = text.length;
+              thinkingText += text.substring(thinkingText.length, text.length);
+              return innerStr + text;
             } else if (
               type == "quote_result" &&
               status == "finish" &&
               meta_data &&
-              _.isArray(meta_data.metadata_list)
+              _.isArray(meta_data.metadata_list) &&
+              !isSilentModel
             ) {
               const searchText =
                 meta_data.metadata_list.reduce(

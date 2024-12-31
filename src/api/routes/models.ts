@@ -19,6 +19,11 @@ export default {
                         "owned_by": "glm-free-api"
                     },
                     {
+                        "id": "glm-4-plus",
+                        "object": "model",
+                        "owned_by": "glm-free-api"
+                    },
+                    {
                         "id": "glm-4v",
                         "object": "model",
                         "owned_by": "glm-free-api"

@@ -5,6 +5,9 @@ import Response from '@/lib/response/Response.ts';
 import chat from '@/api/controllers/chat.ts';
 import logger from '@/lib/logger.ts';
 
+// zero推理模型智能体ID
+const ZERO_ASSISTANT_ID = "676411c38945bbc58a905d31";
+
 export default {
 
     prefix: '/v1/chat',
@@ -21,15 +24,15 @@ export default {
             // 随机挑选一个refresh_token
             const token = _.sample(tokens);
             const { model, conversation_id: convId, messages, stream } = request.body;
-            const assistantId = /^[a-z0-9]{24,}$/.test(model) ? model : undefined
+
             if (stream) {
-                const stream = await chat.createCompletionStream(messages, token, assistantId, convId);
+                const stream = await chat.createCompletionStream(messages, token, model, convId);
                 return new Response(stream, {
                     type: "text/event-stream"
                 });
             }
             else
-                return await chat.createCompletion(messages, token, assistantId, convId);
+                return await chat.createCompletion(messages, token, model, convId);
         }
 
     }

@@ -289,8 +289,10 @@ Authorization: Bearer [refresh_token]
 Request data:
 ```json
 {
-    // Except using the Agent to fill the ID, fill in the model name as you like.
-    "model": "glm4",
+    // Default model: glm-4-plus
+    // zero thinking model: glm-4-zero / glm-4-think
+    // If using the Agent, fill in the Agent ID here
+    "model": "glm-4",
     // Currently, multi-round conversations are realized based on message merging, which in some scenarios may lead to capacity degradation and is limited by the maximum number of tokens in a single round.
     // If you want a native multi-round dialog experience, you can pass in the ids obtained from the last round of messages to pick up the context
     // "conversation_id": "65f6c28546bae1f0fbb532de",
@@ -309,7 +311,7 @@ Response data：
 ```json
 {
     "id": "65f6c28546bae1f0fbb532de",
-    "model": "glm4",
+    "model": "glm-4",
     "object": "chat.completion",
     "choices": [
         {
@@ -434,7 +436,7 @@ Request data:
 ```json
 {
     // 如果使用智能体请填写智能体ID到此处，否则可以乱填
-    "model": "glm4",
+    "model": "glm-4",
     "messages": [
         {
             "role": "user",
@@ -461,7 +463,7 @@ Response data:
 ```json
 {
     "id": "cnmuo7mcp7f9hjcmihn0",
-    "model": "glm4",
+    "model": "glm-4",
     "object": "chat.completion",
     "choices": [
         {

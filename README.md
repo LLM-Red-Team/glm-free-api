@@ -9,7 +9,7 @@
 ![](https://img.shields.io/github/forks/llm-red-team/glm-free-api.svg)
 ![](https://img.shields.io/docker/pulls/vinlic/glm-free-api.svg)
 
-支持高速流式输出、支持多轮对话、支持智能体对话、支持视频生成、支持AI绘图、支持联网搜索、支持长文档解读、支持图像解析，零配置部署，多路token支持，自动清理会话痕迹。
+支持GLM-4-Plus高速流式输出、支持多轮对话、支持智能体对话、支持Zero思考推理模型、支持视频生成、支持AI绘图、支持联网搜索、支持长文档解读、支持图像解析，零配置部署，多路token支持，自动清理会话痕迹。
 
 与ChatGPT接口完全兼容。
 
@@ -286,8 +286,10 @@ Authorization: Bearer [refresh_token]
 请求数据：
 ```json
 {
-    // 如果使用智能体请填写智能体ID到此处，否则可以乱填
-    "model": "glm4",
+    // 默认模型：glm-4-plus
+    // zero思考推理模型：glm-4-zero / glm-4-think
+    // 如果使用智能体请填写智能体ID到此处
+    "model": "glm-4-plus",
     // 目前多轮对话基于消息合并实现，某些场景可能导致能力下降且受单轮最大token数限制
     // 如果您想获得原生的多轮对话体验，可以传入首轮消息获得的id，来接续上下文
     // "conversation_id": "65f6c28546bae1f0fbb532de",
@@ -307,7 +309,7 @@ Authorization: Bearer [refresh_token]
 {
     // 如果想获得原生多轮对话体验，此id，你可以传入到下一轮对话的conversation_id来接续上下文
     "id": "65f6c28546bae1f0fbb532de",
-    "model": "glm4",
+    "model": "glm-4",
     "object": "chat.completion",
     "choices": [
         {
@@ -432,7 +434,7 @@ Authorization: Bearer [refresh_token]
 ```json
 {
     // 如果使用智能体请填写智能体ID到此处，否则可以乱填
-    "model": "glm4",
+    "model": "glm-4",
     "messages": [
         {
             "role": "user",
@@ -459,7 +461,7 @@ Authorization: Bearer [refresh_token]
 ```json
 {
     "id": "cnmuo7mcp7f9hjcmihn0",
-    "model": "glm4",
+    "model": "glm-4",
     "object": "chat.completion",
     "choices": [
         {
