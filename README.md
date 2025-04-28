@@ -9,7 +9,7 @@
 ![](https://img.shields.io/github/forks/llm-red-team/glm-free-api.svg)
 ![](https://img.shields.io/docker/pulls/vinlic/glm-free-api.svg)
 
-支持GLM-4-Plus高速流式输出、支持多轮对话、支持智能体对话、支持Zero思考推理模型、支持视频生成、支持AI绘图、支持联网搜索、支持长文档解读、支持图像解析，零配置部署，多路token支持，自动清理会话痕迹。
+支持GLM-4-Plus高速流式输出、支持多轮对话、支持智能体对话、支持沉思模型、支持Zero思考推理模型、支持视频生成、支持AI绘图、支持联网搜索、支持长文档解读、支持图像解析，零配置部署，多路token支持，自动清理会话痕迹。
 
 与ChatGPT接口完全兼容。
 
@@ -37,28 +37,40 @@ MiniMax（海螺AI）接口转API [hailuo-free-api](https://github.com/LLM-Red-T
 
 ## 目录
 
-* [免责声明](#免责声明)
-* [效果示例](#效果示例)
-* [接入准备](#接入准备)
-  * [智能体接入](#智能体接入)
-  * [多账号接入](#多账号接入)
-* [Docker部署](#Docker部署)
-  * [Docker-compose部署](#Docker-compose部署)
-  * [Render部署](#Render部署)
-  * [Vercel部署](#Vercel部署)
-* [原生部署](#原生部署)
-* [推荐使用客户端](#推荐使用客户端)
-* [接口列表](#接口列表)
-  * [对话补全](#对话补全)
-  * [视频生成](#视频生成)
-  * [AI绘图](#AI绘图)
-  * [文档解读](#文档解读)
-  * [图像解析](#图像解析)
-  * [refresh_token存活检测](#refresh_token存活检测)
-* [注意事项](#注意事项)
-  * [Nginx反代优化](#Nginx反代优化)
-  * [Token统计](#Token统计)
-* [Star History](#star-history)
+- [GLM AI Free 服务](#glm-ai-free-服务)
+  - [目录](#目录)
+  - [免责声明](#免责声明)
+  - [效果示例](#效果示例)
+    - [验明正身Demo](#验明正身demo)
+    - [智能体对话Demo](#智能体对话demo)
+    - [结合Dify工作流Demo](#结合dify工作流demo)
+    - [多轮对话Demo](#多轮对话demo)
+    - [视频生成Demo](#视频生成demo)
+    - [AI绘图Demo](#ai绘图demo)
+    - [联网搜索Demo](#联网搜索demo)
+    - [长文档解读Demo](#长文档解读demo)
+    - [代码调用Demo](#代码调用demo)
+    - [图像解析Demo](#图像解析demo)
+  - [接入准备](#接入准备)
+    - [智能体接入](#智能体接入)
+    - [多账号接入](#多账号接入)
+  - [Docker部署](#docker部署)
+    - [Docker-compose部署](#docker-compose部署)
+    - [Render部署](#render部署)
+    - [Vercel部署](#vercel部署)
+  - [原生部署](#原生部署)
+  - [推荐使用客户端](#推荐使用客户端)
+  - [接口列表](#接口列表)
+    - [对话补全](#对话补全)
+    - [视频生成](#视频生成)
+    - [AI绘图](#ai绘图)
+    - [文档解读](#文档解读)
+    - [图像解析](#图像解析)
+    - [refresh\_token存活检测](#refresh_token存活检测)
+  - [注意事项](#注意事项)
+    - [Nginx反代优化](#nginx反代优化)
+    - [Token统计](#token统计)
+  - [Star History](#star-history)
   
 ## 免责声明
 
@@ -288,6 +300,7 @@ Authorization: Bearer [refresh_token]
 {
     // 默认模型：glm-4-plus
     // zero思考推理模型：glm-4-zero / glm-4-think
+    // 沉思模型：glm-4-deepresearch
     // 如果使用智能体请填写智能体ID到此处
     "model": "glm-4-plus",
     // 目前多轮对话基于消息合并实现，某些场景可能导致能力下降且受单轮最大token数限制

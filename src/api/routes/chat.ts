@@ -3,10 +3,6 @@ import _ from 'lodash';
 import Request from '@/lib/request/Request.ts';
 import Response from '@/lib/response/Response.ts';
 import chat from '@/api/controllers/chat.ts';
-import logger from '@/lib/logger.ts';
-
-// zero推理模型智能体ID
-const ZERO_ASSISTANT_ID = "676411c38945bbc58a905d31";
 
 export default {
 

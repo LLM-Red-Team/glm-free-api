@@ -5,7 +5,7 @@
 ![](https://img.shields.io/github/forks/llm-red-team/glm-free-api.svg)
 ![](https://img.shields.io/docker/pulls/vinlic/glm-free-api.svg)
 
-Supports high-speed streaming output, multi-turn dialogues, internet search, long document reading, image analysis, zero-configuration deployment, multi-token support, and automatic session trace cleanup.
+Supports high-speed streaming output, multi-turn dialogues, internet search, long document reading, image analysis, deepresearch, zero-configuration deployment, multi-token support, and automatic session trace cleanup.
 
 Fully compatible with the ChatGPT interface.
 
@@ -33,29 +33,41 @@ Lingxin Intelligence (Emohaa) API to API [emohaa-free-api](https://github.com/LL
 
 ## Table of Contents
 
-* [Announcement](#Announcement)
-* [Online Experience](#Online-Experience)
-* [Effect Examples](#Effect-Examples)
-* [Access Preparation](#Access-Preparation)
-    * [Agent Access](#Agent-Access)
-    * [Multiple Account Access](#Multiple-Account-Access)
-* [Docker Deployment](#Docker-Deployment)
-    * [Docker-compose Deployment](#Docker-compose-Deployment)
-    * [Render Deployment](#Render-Deployment)
-    * [Vercel Deployment](#Vercel-Deployment)
-* [Native Deployment](#Native-Deployment)
-* [Recommended Clients](#Recommended-Clients)
-* [Interface List](#Interface-List)
-    * [Conversation Completion](#Conversation-Completion)
-    * [Video Generation](#Video-Generation)
-    * [AI Drawing](#AI-Drawing)
-    * [Document Interpretation](#Document-Interpretation)
-    * [Image Analysis](#Image-Analysis)
-    * [Refresh_token Survival Detection](#Refresh_token-Survival-Detection)
-* [Notification](#Notification)
-    * [Nginx Anti-generation Optimization](#Nginx-Anti-generation-Optimization)
-    * [Token Statistics](#Token-Statistics)
-* [Star History](#star-history)
+- [GLM AI Free Service](#glm-ai-free-service)
+  - [Table of Contents](#table-of-contents)
+  - [Announcement](#announcement)
+  - [Online Experience](#online-experience)
+  - [Effect Examples](#effect-examples)
+    - [Identity Verification](#identity-verification)
+    - [AI-Agent](#ai-agent)
+    - [Combined with Dify workflow](#combined-with-dify-workflow)
+    - [Multi-turn Dialogue](#multi-turn-dialogue)
+    - [Video Generation](#video-generation)
+    - [AI Drawing](#ai-drawing)
+    - [Internet Search](#internet-search)
+    - [Long Document Reading](#long-document-reading)
+    - [Using Code](#using-code)
+    - [Image Analysis](#image-analysis)
+  - [Access Preparation](#access-preparation)
+    - [Agent Access](#agent-access)
+    - [Multiple Account Access](#multiple-account-access)
+  - [Docker Deployment](#docker-deployment)
+    - [Docker-compose Deployment](#docker-compose-deployment)
+    - [Render Deployment](#render-deployment)
+    - [Vercel Deployment](#vercel-deployment)
+  - [Native Deployment](#native-deployment)
+  - [Recommended Clients](#recommended-clients)
+  - [interface List](#interface-list)
+    - [Conversation Completion](#conversation-completion)
+    - [Video Generation](#video-generation-1)
+    - [AI Drawing](#ai-drawing-1)
+    - [Document Interpretation](#document-interpretation)
+    - [Image Analysis](#image-analysis-1)
+    - [Refresh\_token Survival Detection](#refresh_token-survival-detection)
+  - [Notification](#notification)
+    - [Nginx Anti-generation Optimization](#nginx-anti-generation-optimization)
+    - [Token Statistics](#token-statistics)
+  - [Star History](#star-history)
   
 ## Announcement
 
@@ -291,6 +303,7 @@ Request data:
 {
     // Default model: glm-4-plus
     // zero thinking model: glm-4-zero / glm-4-think
+    // deepresearch model: glm-4-deepresearch
     // If using the Agent, fill in the Agent ID here
     "model": "glm-4",
     // Currently, multi-round conversations are realized based on message merging, which in some scenarios may lead to capacity degradation and is limited by the maximum number of tokens in a single round.
