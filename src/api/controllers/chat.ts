@@ -3,7 +3,6 @@ import path from "path";
 import _ from "lodash";
 import mime from "mime";
 import sharp from "sharp";
-import fs from "fs-extra";
 import FormData from "form-data";
 import axios, { AxiosResponse } from "axios";
 
@@ -19,25 +18,38 @@ const MODEL_NAME = "glm";
 const DEFAULT_ASSISTANT_ID = "65940acff94777010aa6b796";
 // zero推理模型智能体ID
 const ZERO_ASSISTANT_ID = "676411c38945bbc58a905d31";
+// 签名密钥（官网变化记得更新）
+const SIGN_SECRET = "8a1317a7468aa3ad86e997d08f3f31cb";
 // access_token有效期
 const ACCESS_TOKEN_EXPIRES = 3600;
 // 最大重试次数
-const MAX_RETRY_COUNT = 3;
+const MAX_RETRY_COUNT = 0;
 // 重试延迟
 const RETRY_DELAY = 5000;
 // 伪装headers
 const FAKE_HEADERS = {
-  Accept: "*/*",
+  "Accept": "application/json, text/plain, */*",
+  "Accept-Encoding": "gzip, deflate, br, zstd",
+  "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
+  "Cache-Control": "no-cache",
   "App-Name": "chatglm",
-  Platform: "pc",
-  Origin: "https://chatglm.cn",
-  "Sec-Ch-Ua":
-    '"Chromium";v="122", "Not(A:Brand";v="24", "Google Chrome";v="122"',
-  "Sec-Ch-Ua-Mobile": "?0",
-  "Sec-Ch-Ua-Platform": '"Windows"',
+  "Origin": "https://chatglm.cn",
+  "Pragma": "no-cache",
+  "sec-ch-ua":
+    '"Chromium";v="134", "Not:A-Brand";v="24", "Google Chrome";v="134"',
+  "sec-ch-ua-mobile": "?0",
+  "sec-ch-ua-platform": '"macOS"',
+  "Sec-Fetch-Dest": "empty",
+  "Sec-Fetch-Mode": "cors",
+  "Sec-Fetch-Site": "same-origin",
   "User-Agent":
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-  Version: "0.0.1",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36",
+  'X-App-Platform': 'pc',
+  'X-App-Version': '0.0.1',
+  'X-Device-Brand': '',
+  'X-Device-Model': '',
+  'X-Exp-Groups': 'na_android_config:exp:NA,na_4o_config:exp:4o_A,na_glm4plus_config:exp:open,mainchat_server_app:exp:A,mobile_history_daycheck:exp:a,desktop_toolbar:exp:A,chat_drawing_server:exp:A,drawing_server_cogview:exp:cogview4,app_welcome_v2:exp:B,chat_drawing_streamv2:exp:A,mainchat_rm_fc:exp:add,mainchat_dr:exp:open,chat_auto_entrance:exp:A',
+  'X-Lang': 'zh'
 };
 // 文件最大大小
 const FILE_MAX_SIZE = 100 * 1024 * 1024;
@@ -45,6 +57,29 @@ const FILE_MAX_SIZE = 100 * 1024 * 1024;
 const accessTokenMap = new Map();
 // access_token请求队列映射
 const accessTokenRequestQueueMap: Record<string, Function[]> = {};
+
+/**
+ * 生成sign
+ */
+async function generateSign() {
+  // 智谱的时间戳算法（官网变化记得更新）
+  const e = Date.now()
+              , A = e.toString()
+              , t = A.length
+              , o = A.split("").map((e => Number(e)))
+              , i = o.reduce(( (e, A) => e + A), 0) - o[t - 2]
+              , a = i % 10;
+  const timestamp = A.substring(0, t - 2) + a + A.substring(t - 1, t);
+  // 随机UUID
+  const nonce = util.uuid(false);
+  // 签名
+  const sign = util.md5(`${timestamp}-${nonce}-${SIGN_SECRET}`);
+  return {
+    timestamp,
+    nonce,
+    sign
+  }
+}
 
 /**
  * 请求access_token
@@ -61,26 +96,32 @@ async function requestToken(refreshToken: string) {
   accessTokenRequestQueueMap[refreshToken] = [];
   logger.info(`Refresh token: ${refreshToken}`);
   const result = await (async () => {
+    // 生成sign
+    const sign = await generateSign();
     const result = await axios.post(
-      "https://chatglm.cn/chatglm/backend-api/v1/user/refresh",
+      "https://chatglm.cn/chatglm/user-api/user/refresh",
       {},
       {
         headers: {
+          // Referer: "https://chatglm.cn/main/alltoolsdetail",
           Authorization: `Bearer ${refreshToken}`,
-          Referer: "https://chatglm.cn/main/alltoolsdetail",
-          "X-Device-Id": util.uuid(false),
-          "X-Request-Id": util.uuid(false),
+          "Content-Type": "application/json",
           ...FAKE_HEADERS,
+          "X-Device-Id": util.uuid(false),
+          "X-Nonce": sign.nonce,
+          "X-Request-Id": util.uuid(false),
+          "X-Sign": sign.sign,
+          "X-Timestamp": `${sign.timestamp}`,
         },
         timeout: 15000,
         validateStatus: () => true,
       }
     );
     const { result: _result } = checkResult(result, refreshToken);
-    const { accessToken } = _result;
+    const { access_token, refresh_token } = _result;
     return {
-      accessToken,
-      refreshToken,
+      accessToken: access_token,
+      refreshToken: refresh_token,
       refreshTime: util.unixTimestamp() + ACCESS_TOKEN_EXPIRES,
     };
   })()
@@ -140,7 +181,7 @@ async function removeConversation(
   assistantId = DEFAULT_ASSISTANT_ID
 ) {
   const token = await acquireToken(refreshToken);
-
+  const sign = await generateSign();
   const result = await axios.post(
     "https://chatglm.cn/chatglm/backend-api/assistant/conversation/delete",
     {
@@ -153,6 +194,9 @@ async function removeConversation(
         Referer: `https://chatglm.cn/main/alltoolsdetail`,
         "X-Device-Id": util.uuid(false),
         "X-Request-Id": util.uuid(false),
+        "X-Sign": sign.sign,
+        "X-Timestamp": sign.timestamp,
+        "X-Nonce": sign.nonce,
         ...FAKE_HEADERS,
       },
       timeout: 15000,
@@ -192,14 +236,21 @@ async function createCompletion(
     if (!/[0-9a-zA-Z]{24}/.test(refConvId)) refConvId = "";
 
     let assistantId = /^[a-z0-9]{24,}$/.test(model) ? model : DEFAULT_ASSISTANT_ID;
+    let chatMode = '';
 
     if(model.indexOf('think') != -1 || model.indexOf('zero') != -1) {
-      assistantId = ZERO_ASSISTANT_ID;
-      logger.info('使用思考模型');
+      chatMode = 'zero';
+      logger.info('使用【推理】模型');
+    }
+    
+    if(model.indexOf('deepresearch') != -1) {
+      chatMode = 'deep_research';
+      logger.info('使用【沉思（DeepResearch）】模型');
     }
 
     // 请求流
     const token = await acquireToken(refreshToken);
+    const sign = await generateSign();
     const result = await axios.post(
       "https://chatglm.cn/chatglm/backend-api/assistant/stream",
       {
@@ -208,9 +259,11 @@ async function createCompletion(
         messages: messagesPrepare(messages, refs, !!refConvId),
         meta_data: {
           channel: "",
+          chat_mode: chatMode || undefined,
           draft_id: "",
           if_plus_model: true,
           input_question_type: "xxxx",
+          is_networking: true,
           is_test: false,
           platform: "pc",
           quote_log_id: ""
@@ -219,13 +272,12 @@ async function createCompletion(
       {
         headers: {
           Authorization: `Bearer ${token}`,
-          Referer:
-            assistantId == DEFAULT_ASSISTANT_ID
-              ? "https://chatglm.cn/main/alltoolsdetail"
-              : `https://chatglm.cn/main/gdetail/${assistantId}`,
+          ...FAKE_HEADERS,
           "X-Device-Id": util.uuid(false),
           "X-Request-Id": util.uuid(false),
-          ...FAKE_HEADERS,
+          "X-Sign": sign.sign,
+          "X-Timestamp": sign.timestamp,
+          "X-Nonce": sign.nonce,
         },
         // 120秒超时
         timeout: 120000,
@@ -303,14 +355,21 @@ async function createCompletionStream(
     if (!/[0-9a-zA-Z]{24}/.test(refConvId)) refConvId = "";
 
     let assistantId = /^[a-z0-9]{24,}$/.test(model) ? model : DEFAULT_ASSISTANT_ID;
+    let chatMode = '';
 
     if(model.indexOf('think') != -1 || model.indexOf('zero') != -1) {
-      assistantId = ZERO_ASSISTANT_ID;
-      logger.info('使用思考模型');
+      chatMode = 'zero';
+      logger.info('使用【推理】模型');
+    }
+
+    if(model.indexOf('deepresearch') != -1) {
+      chatMode = 'deep_research';
+      logger.info('使用【沉思（DeepResearch）】模型');
     }
 
     // 请求流
     const token = await acquireToken(refreshToken);
+    const sign = await generateSign();
     const result = await axios.post(
       `https://chatglm.cn/chatglm/backend-api/assistant/stream`,
       {
@@ -319,9 +378,11 @@ async function createCompletionStream(
         messages: messagesPrepare(messages, refs, !!refConvId),
         meta_data: {
           channel: "",
+          chat_mode: chatMode || undefined,
           draft_id: "",
           if_plus_model: true,
           input_question_type: "xxxx",
+          is_networking: true,
           is_test: false,
           platform: "pc",
           quote_log_id: ""
@@ -336,6 +397,9 @@ async function createCompletionStream(
               : `https://chatglm.cn/main/gdetail/${assistantId}`,
           "X-Device-Id": util.uuid(false),
           "X-Request-Id": util.uuid(false),
+          "X-Sign": sign.sign,
+          "X-Timestamp": sign.timestamp,
+          "X-Nonce": sign.nonce,
           ...FAKE_HEADERS,
         },
         // 120秒超时
@@ -420,6 +484,7 @@ async function generateImages(
     ];
     // 请求流
     const token = await acquireToken(refreshToken);
+    const sign = await generateSign();
     const result = await axios.post(
       "https://chatglm.cn/chatglm/backend-api/assistant/stream",
       {
@@ -442,6 +507,9 @@ async function generateImages(
           Referer: `https://chatglm.cn/main/gdetail/${model}`,
           "X-Device-Id": util.uuid(false),
           "X-Request-Id": util.uuid(false),
+          "X-Sign": sign.sign,
+          "X-Timestamp": sign.timestamp,
+          "X-Nonce": sign.nonce,
           ...FAKE_HEADERS,
         },
         // 120秒超时
@@ -522,6 +590,7 @@ async function generateVideos(
 
     // 发起生成请求
     let token = await acquireToken(refreshToken);
+    const sign = await generateSign();
     const result = await axios.post(
       `https://chatglm.cn/chatglm/video-api/v1/chat`,
       {
@@ -540,6 +609,9 @@ async function generateVideos(
           Referer: "https://chatglm.cn/video",
           "X-Device-Id": util.uuid(false),
           "X-Request-Id": util.uuid(false),
+          "X-Sign": sign.sign,
+          "X-Timestamp": sign.timestamp,
+          "X-Nonce": sign.nonce,
           ...FAKE_HEADERS,
         },
         // 30秒超时
@@ -557,6 +629,7 @@ async function generateVideos(
       if (util.unixTimestamp() - startTime > 600)
         throw new APIException(EX.API_VIDEO_GENERATION_FAILED);
       const token = await acquireToken(refreshToken);
+      const sign = await generateSign();
       const result = await axios.get(
         `https://chatglm.cn/chatglm/video-api/v1/chat/status/${chatId}`,
         {
@@ -565,6 +638,9 @@ async function generateVideos(
             Referer: "https://chatglm.cn/video",
             "X-Device-Id": util.uuid(false),
             "X-Request-Id": util.uuid(false),
+            "X-Sign": sign.sign,
+            "X-Timestamp": sign.timestamp,
+            "X-Nonce": sign.nonce,
             ...FAKE_HEADERS,
           },
           // 30秒超时
@@ -589,6 +665,7 @@ async function generateVideos(
         if (options.audioId) {
           const [key, id] = options.audioId.split("-");
           const token = await acquireToken(refreshToken);
+          const sign = await generateSign();
           const result = await axios.post(
             `https://chatglm.cn/chatglm/video-api/v1/static/composite_video`,
             {
@@ -602,6 +679,9 @@ async function generateVideos(
                 Referer: "https://chatglm.cn/video",
                 "X-Device-Id": util.uuid(false),
                 "X-Request-Id": util.uuid(false),
+                "X-Sign": sign.sign,
+                "X-Timestamp": sign.timestamp,
+                "X-Nonce": sign.nonce,
                 ...FAKE_HEADERS,
               },
               // 30秒超时
@@ -923,6 +1003,9 @@ function checkResult(result: AxiosResponse, refreshToken: string) {
   if (!_.isFinite(code) && !_.isFinite(status)) return result.data;
   if (code === 0 || status === 0) return result.data;
   if (code == 401) accessTokenMap.delete(refreshToken);
+  if (message.includes('40102')) {
+    throw new APIException(EX.API_REQUEST_FAILED, `[请求glm失败]: 您的refresh_token已过期，请重新登录获取`);
+  }
   throw new APIException(EX.API_REQUEST_FAILED, `[请求glm失败]: ${message}`);
 }
 
@@ -950,7 +1033,9 @@ async function receiveStream(model: string, stream: any): Promise<any> {
       created: util.unixTimestamp(),
     };
     const isSilentModel = model.indexOf('silent') != -1;
+    const isThinkModel = model.indexOf('think') != -1 || model.indexOf('zero') != -1;
     let thinkingText = "";
+    let thinking = false;
     let toolCall = false;
     let codeGenerating = false;
     let textChunkLength = 0;
@@ -977,6 +1062,7 @@ async function receiveStream(model: string, stream: any): Promise<any> {
                 status: partStatus,
                 type,
                 text,
+                think,
                 image,
                 code,
                 content,
@@ -995,13 +1081,22 @@ async function receiveStream(model: string, stream: any): Promise<any> {
                 }
                 if (partStatus == "finish") textChunkLength = text.length;
                 return innerStr + text;
-              } else if (type == "text_thinking" && !isSilentModel) {
+              } else if (type == "think" && isThinkModel && !isSilentModel) {
                 if (toolCall) {
                   innerStr += "\n";
                   textOffset++;
                   toolCall = false;
                 }
-                thinkingText = text;
+                if (partStatus == "finish") textChunkLength = think.length;
+                thinkingText += think.substring(thinkingText.length, think.length);
+                return innerStr;
+              } else if (type == "think" && !isSilentModel) {
+                if (toolCall) {
+                  innerStr += "\n";
+                  textOffset++;
+                  toolCall = false;
+                }
+                thinkingText += text;
                 return innerStr;
               }else if (
                 type == "quote_result" &&
@@ -1072,7 +1167,7 @@ async function receiveStream(model: string, stream: any): Promise<any> {
           data.choices[0].message.content += chunk;
         } else {
           if(thinkingText)
-            data.choices[0].message.content = `[思考开始]\n${thinkingText}[思考结束]\n\n${data.choices[0].message.content}`;
+            data.choices[0].message.content = `<think>\n${thinkingText}</think>\n\n${data.choices[0].message.content}`;
           data.choices[0].message.content =
             data.choices[0].message.content.replace(
               /【\d+†(来源|源|source)】/g,
@@ -1110,6 +1205,7 @@ function createTransStream(model: string, stream: any, endCallback?: Function) {
   // 创建转换流
   const transStream = new PassThrough();
   const isSilentModel = model.indexOf('silent') != -1;
+  const isThinkModel = model.indexOf('think') != -1 || model.indexOf('zero') != -1;
   let content = "";
   let thinking = false;
   let toolCall = false;
@@ -1151,6 +1247,7 @@ function createTransStream(model: string, stream: any, endCallback?: Function) {
               status: partStatus,
               type,
               text,
+              think,
               image,
               code,
               content,
@@ -1162,8 +1259,8 @@ function createTransStream(model: string, stream: any, endCallback?: Function) {
             }
             if (type == "text") {
               if(thinking) {
-                innerStr += "[思考结束]\n\n"
-                textOffset = thinkingText.length + 8;
+                innerStr += "</think>\n\n"
+                textOffset += thinkingText.length + 8;
                 thinking = false;
               }
               if (toolCall) {
@@ -1173,10 +1270,10 @@ function createTransStream(model: string, stream: any, endCallback?: Function) {
               }
               if (partStatus == "finish") textChunkLength = text.length;
               return innerStr + text;
-            } else if (type == "text_thinking" && !isSilentModel) {
+            } else if (type == "think" && isThinkModel && !isSilentModel) {
               if(!thinking) {
-                innerStr += "[思考开始]\n";
-                textOffset = 7;
+                innerStr += "<think>\n";
+                textOffset += 7;
                 thinking = true;
               }
               if (toolCall) {
@@ -1184,9 +1281,18 @@ function createTransStream(model: string, stream: any, endCallback?: Function) {
                 textOffset++;
                 toolCall = false;
               }
-              if (partStatus == "finish") textChunkLength = text.length;
-              thinkingText += text.substring(thinkingText.length, text.length);
-              return innerStr + text;
+              if (partStatus == "finish") textChunkLength = think.length;
+              thinkingText += think.substring(thinkingText.length, think.length);
+              return innerStr + thinkingText;
+            } else if (type == "think" && !isSilentModel) {
+              if (toolCall) {
+                innerStr += "\n";
+                textOffset++;
+                toolCall = false;
+              }
+              if (partStatus == "finish") textChunkLength = thinkingText.length;
+              thinkingText += think;
+              return innerStr + thinkingText;
             } else if (
               type == "quote_result" &&
               status == "finish" &&
@@ -1196,9 +1302,9 @@ function createTransStream(model: string, stream: any, endCallback?: Function) {
             ) {
               const searchText =
                 meta_data.metadata_list.reduce(
-                  (meta, v) => meta + `检索 ${v.title}(${v.url}) ...`,
+                  (meta, v) => meta + `检索 ${v.title}(${v.url}) ...\n`,
                   ""
-                ) + "\n";
+                );
               textOffset += searchText.length;
               toolCall = true;
               return innerStr + searchText;
@@ -1389,40 +1495,22 @@ function tokenSplit(authorization: string) {
 }
 
 /**
- * 备用生成cookie
- *
- * 暂时还不需要
- *
- * @param refreshToken
- * @param token
- */
-function generateCookie(refreshToken: string, token: string) {
-  const timestamp = util.unixTimestamp();
-  const gsTimestamp = timestamp - Math.round(Math.random() * 2592000);
-  return {
-    chatglm_refresh_token: refreshToken,
-    // chatglm_user_id: '',
-    _ga_PMD05MS2V9: `GS1.1.${gsTimestamp}.18.0.${gsTimestamp}.0.0.0`,
-    chatglm_token: token,
-    chatglm_token_expires: util.getDateString("yyyy-MM-dd HH:mm:ss"),
-    abtestid: "a",
-    // acw_tc: ''
-  };
-}
-
-/**
  * 获取Token存活状态
  */
 async function getTokenLiveStatus(refreshToken: string) {
+  const sign = await generateSign();
   const result = await axios.post(
-    "https://chatglm.cn/chatglm/backend-api/v1/user/refresh",
-    {},
+    "https://chatglm.cn/chatglm/user-api/user/refresh",
+    undefined,
     {
       headers: {
         Authorization: `Bearer ${refreshToken}`,
         Referer: "https://chatglm.cn/main/alltoolsdetail",
         "X-Device-Id": util.uuid(false),
         "X-Request-Id": util.uuid(false),
+        "X-Sign": sign.sign,
+        "X-Timestamp": sign.timestamp,
+        "X-Nonce": sign.nonce,
         ...FAKE_HEADERS,
       },
       timeout: 15000,
