@@ -16,14 +16,12 @@ import util from "@/lib/util.ts";
 const MODEL_NAME = "glm";
 // 默认的智能体ID，GLM4
 const DEFAULT_ASSISTANT_ID = "65940acff94777010aa6b796";
-// zero推理模型智能体ID
-const ZERO_ASSISTANT_ID = "676411c38945bbc58a905d31";
 // 签名密钥（官网变化记得更新）
 const SIGN_SECRET = "8a1317a7468aa3ad86e997d08f3f31cb";
 // access_token有效期
 const ACCESS_TOKEN_EXPIRES = 3600;
 // 最大重试次数
-const MAX_RETRY_COUNT = 0;
+const MAX_RETRY_COUNT = 3;
 // 重试延迟
 const RETRY_DELAY = 5000;
 // 伪装headers
